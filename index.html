@@ -16,7 +16,7 @@
 :root[data-theme="dark"]{--bg:#14151d;--surface:#1f2130;--ink:#eceef7;--muted:#9aa0b8;--line:#2f3246;--soft:#282b3c;--brand:#ff7559;--ok:#3cc28d;--ad:#f5b13c;color-scheme:dark}
 body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.65;-webkit-tap-highlight-color:transparent}
 .wrap{max-width:480px;margin:0 auto;box-sizing:border-box;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 40px;display:flex;flex-direction:column;gap:14px}
-h1,h2,h3{font-family:var(--display);font-weight:800;margin:0;text-wrap:balance;letter-spacing:.5px}
+h1,h2,h3{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance;letter-spacing:.5px}
 button{font-family:inherit;color:inherit}
 button:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
 .top h1{font-size:40px;line-height:1.1}
@@ -32,7 +32,7 @@ button:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
 .card{display:flex;gap:14px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px;text-align:left;cursor:pointer;width:100%}
 .card:active{transform:scale(.99)}
 .glyph{flex:none;width:54px;height:54px;border-radius:14px;background:var(--c);color:#fff;font-family:var(--display);font-size:30px;display:flex;align-items:center;justify-content:center;overflow:hidden}
-.glyph svg,.av svg{width:100%;height:100%;display:block}
+.glyph svg,.av svg,.glyph img,.av img{width:100%;height:100%;display:block}
 .card .txt{flex:1;min-width:0}
 .card h3{font-size:20px}
 .card p{margin:0;color:var(--muted);font-size:13px;line-height:1.5}
@@ -40,6 +40,18 @@ button:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
 .tag.adt{background:var(--ad);color:#fff}
 .tag.open{background:transparent;border:1px solid var(--ok);color:var(--ok)}
 .foot{color:var(--muted);font-size:12px;text-align:center;line-height:1.6}
+.heroCard{display:flex;flex-direction:column;gap:12px;align-items:flex-start;text-align:left;border:0;border-radius:22px;padding:20px 18px;background:linear-gradient(135deg,#e0832e,#c8412f);color:#fff;cursor:pointer;width:100%;box-shadow:0 10px 24px rgba(200,65,47,.25)}
+.heroCard:active{transform:scale(.99)}
+.heroAvs{display:flex}
+.heroAvs .av{width:58px;height:58px;border-radius:50%;overflow:hidden;border:3px solid rgba(255,255,255,.9);margin-right:-12px;background:#fff}
+.heroTxt{display:flex;flex-direction:column;gap:4px}
+.heroTxt b{font-family:var(--display);font-weight:400;font-size:30px;line-height:1.2}
+.heroTxt small{font-size:14px;opacity:.92;line-height:1.5}
+.heroGo{background:#fff;color:#c8412f;font-weight:700;border-radius:999px;padding:9px 18px;font-size:15px}
+.strip{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;border:1px dashed var(--line);background:var(--surface);border-radius:12px;padding:10px 14px;font-size:13px;color:var(--muted);cursor:pointer;text-align:left}
+.strip b{color:var(--brand)}
+.strip .arrow{font-size:20px;line-height:1;color:var(--muted)}
+.strip.on{justify-content:center;color:var(--ok);border-style:solid}
 /* gender */
 .gender{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .gbtn{border:2px solid var(--line);background:var(--surface);border-radius:18px;padding:18px 10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;font-family:var(--display);font-size:24px}
@@ -146,7 +158,7 @@ button:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
 .dots i.on{background:var(--ad)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
-<style>html{-webkit-text-size-adjust:100%}body{margin:0}img{max-width:100%}[hidden]{display:none!important}h1,h2,h3,.bundle b,.lock b,.count,.adplay .num,.glyph,.gbtn{font-weight:800}</style>
+<style>html{-webkit-text-size-adjust:100%}body{margin:0}img{max-width:100%}[hidden]{display:none!important}h1,h2,h3,.bundle b,.lock b,.adplay .num,.glyph,.gbtn,.heroTxt b,.sheet h3{font-weight:800}</style>
 </head>
 <body>
 
@@ -155,166 +167,276 @@ button:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
 <div class="ov" id="ov" hidden></div>
 
 <script>
-/* ---------- 几何切面风格头像（代码绘制） ---------- */
+/* ---------- 几何切面风格头像（代码绘制，立体光照） ---------- */
 const LP=(()=>{
   const INK='#2a2230';
-  const rgb=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
-  const tone=(h,f)=>{const c=rgb(h).map(v=>Math.round(Math.max(0,Math.min(255,f>=1?v+(255-v)*(f-1):v*f))));return `rgb(${c[0]},${c[1]},${c[2]})`};
+  const rgb=h=>{if(h.length===4)h='#'+[...h.slice(1)].map(c=>c+c).join('');return [1,3,5].map(i=>parseInt(h.slice(i,i+2),16))};
+  const cl=v=>Math.round(Math.max(0,Math.min(255,v)));
+  const tone=(h,f)=>{const c=rgb(h).map(v=>f>=1?v+(255-v)*(f-1):v*f);return '#'+c.map(v=>cl(v).toString(16).padStart(2,'0')).join('')};
   let seed=7;const rnd=()=>{seed=(seed*16807)%2147483647;return seed/2147483647};
-  const LX=-0.55,LY=-0.83;
+  const LN=(()=>{const v=[-0.42,-0.68,0.6];const l=Math.hypot(...v);return v.map(x=>x/l)})();
   const f1=n=>n.toFixed(1);
-  const tri=(a,b,c,fill)=>`<path d="M${f1(a[0])} ${f1(a[1])}L${f1(b[0])} ${f1(b[1])}L${f1(c[0])} ${f1(c[1])}Z" fill="${fill}" stroke="${fill}" stroke-width=".7" stroke-linejoin="round"/>`;
-  function facet(pts,col,k){
-    const n=pts.length;const cx=pts.reduce((s,p)=>s+p[0],0)/n,cy=pts.reduce((s,p)=>s+p[1],0)/n;
-    const inn=pts.map(p=>[cx+(p[0]-cx)*.52,cy+(p[1]-cy)*.52]);
+  const tri=(a,b,c,fill)=>`<path d="M${f1(a[0])} ${f1(a[1])}L${f1(b[0])} ${f1(b[1])}L${f1(c[0])} ${f1(c[1])}Z" fill="${fill}" stroke="${fill}" stroke-width=".6" stroke-linejoin="round"/>`;
+  function shade(a,b,c,col){
+    const u=[b[0]-a[0],b[1]-a[1],b[2]-a[2]],v=[c[0]-a[0],c[1]-a[1],c[2]-a[2]];
+    let n=[u[1]*v[2]-u[2]*v[1],u[2]*v[0]-u[0]*v[2],u[0]*v[1]-u[1]*v[0]];
+    if(n[2]<0)n=n.map(x=>-x);const l=Math.hypot(...n)||1;
+    const d=(n[0]*LN[0]+n[1]*LN[1]+n[2]*LN[2])/l;
+    return tone(col,.8+.36*d+(rnd()-.5)*.05);
+  }
+  // 立体切面：多边形被分成三圈三角面，按“鼓起来”的高度计算明暗
+  function facet(pts,col,h=.3){
+    const n=pts.length;let cx=0,cy=0,ar=0;
+    pts.forEach((p,i)=>{cx+=p[0];cy+=p[1];const q=pts[(i+1)%n];ar+=p[0]*q[1]-q[0]*p[1]});cx/=n;cy/=n;
+    const H=Math.sqrt(Math.abs(ar)/2)*h;
+    const ring=(t,z)=>pts.map(p=>[cx+(p[0]-cx)*t+(rnd()-.5)*1.4*t,cy+(p[1]-cy)*t+(rnd()-.5)*1.4*t,H*z]);
+    const R=[pts.map(p=>[p[0],p[1],0]),ring(.68,.58),ring(.32,.9)];const C=[cx,cy,H];
     let o='';
-    const sh=(a,b,c,kk)=>{const tx=(a[0]+b[0]+c[0])/3-cx,ty=(a[1]+b[1]+c[1])/3-cy;const l=Math.hypot(tx,ty)||1;const d=tx/l*LX+ty/l*LY;return tone(col,1+kk*d+(rnd()-.5)*.08)};
-    for(let i=0;i<n;i++){const j=(i+1)%n;o+=tri(pts[i],pts[j],inn[j],sh(pts[i],pts[j],inn[j],k));o+=tri(pts[i],inn[j],inn[i],sh(pts[i],inn[j],inn[i],k*.75))}
-    for(let i=0;i<n;i++){const j=(i+1)%n;const c=[cx,cy];o+=tri(c,inn[i],inn[j],sh(c,inn[i],inn[j],k*.35))}
+    for(let r=0;r<2;r++)for(let i=0;i<n;i++){const j=(i+1)%n;const A=R[r][i],B=R[r][j],Cc=R[r+1][j],D=R[r+1][i];o+=tri(A,B,Cc,shade(A,B,Cc,col))+tri(A,Cc,D,shade(A,Cc,D,col))}
+    for(let i=0;i<n;i++){const j=(i+1)%n;o+=tri(C,R[2][i],R[2][j],shade(C,R[2][i],R[2][j],col))}
     return o;
   }
   const flat=(pts,col,op=1)=>`<path d="M${pts.map(p=>f1(p[0])+' '+f1(p[1])).join('L')}Z" fill="${col}"${op<1?` opacity="${op}"`:''}/>`;
   const line=(d,col,w,op=1)=>`<path d="${d}" fill="none" stroke="${col}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"${op<1?` opacity="${op}"`:''}/>`;
-  // 几何工具
   const poly=(cx,cy,r,n=6,rot=0,sx=1,sy=1)=>Array.from({length:n},(_,i)=>{const a=rot*Math.PI/180+i*2*Math.PI/n;return [cx+Math.cos(a)*r*sx,cy+Math.sin(a)*r*sy]});
   const mir=pts=>pts.map(([x,y])=>[200-x,y]);
   const rot=(pts,cx,cy,deg)=>{const a=deg*Math.PI/180,c=Math.cos(a),s=Math.sin(a);return pts.map(([x,y])=>[cx+(x-cx)*c-(y-cy)*s,cy+(x-cx)*s+(y-cy)*c])};
-  const ring=(cx,cy,r,n,rot0=0,sx=1,sy=1)=>{const p=poly(cx,cy,r,n,rot0,sx,sy);return 'M'+p.map(q=>f1(q[0])+' '+f1(q[1])).join('L')+'Z'};
-  // 通用部件（返回 SVG 字符串）
-  const S={
-    body:(c,k=.22)=>facet([[14,204],[24,170],[58,151],[100,146],[142,151],[176,170],[186,204]],c,k),
-    vcol:(c)=>facet([[72,150],[100,178],[128,150],[116,149],[100,166],[84,149]],c,.2),
-    neck:(s)=>facet([[87,116],[113,116],[115,152],[85,152]],tone(s,.9).replace(/rgb\((\d+),(\d+),(\d+)\)/,(m,r,g,b)=>'#'+[r,g,b].map(v=>(+v).toString(16).padStart(2,'0')).join('')),.15),
-    ears:(s)=>facet([[55,88],[64,85],[66,110],[57,106]],s,.2)+facet(mir([[55,88],[64,85],[66,110],[57,106]]),s,.2),
-    face:(s,w=1)=>facet([[62,84],[68,60],[86,48],[100,46],[114,48],[132,60],[138,84],[136,108],[122,130],[100,140],[78,130],[64,108]].map(([x,y])=>[100+(x-100)*w,y]),s,.2),
-    eyes:(y=98,sy=1,col=INK)=>{const e=[[79,0],[82,-5],[88,-5],[91,0],[88,5],[82,5]];const L=e.map(([x,d])=>[x,y+d*sy]);return flat(L,col)+flat(mir(L),col)+flat([[84,y-3*sy],[87.5,y-3*sy],[85.2,y]],'#fff')+flat([[113,y-3*sy],[116.5,y-3*sy],[114.2,y]],'#fff')},
-    big:(y=99)=>{const e=[[78,0],[81,-7],[89,-7],[92,0],[89,7],[81,7]];const L=e.map(([x,d])=>[x,y+d]);return flat(L,INK)+flat(mir(L),INK)+flat([[83,y-5],[88,y-5],[85,y-1]],'#fff')+flat([[112,y-5],[117,y-5],[114,y-1]],'#fff')},
-    shut:(y=99)=>line(`M78 ${y} L85 ${y-5} L92 ${y}`,INK,3)+line(`M108 ${y} L115 ${y-5} L122 ${y}`,INK,3),
-    smileEyes:(y=99)=>line(`M78 ${y-2} L85 ${y+3} L92 ${y-2}`,INK,3)+line(`M108 ${y-2} L115 ${y+3} L122 ${y-2}`,INK,3),
-    sharp:(y=99)=>{const L=[[75,y+2],[84,y-5],[93,y],[84,y+4]];return flat(L,INK)+flat(mir(L),INK)+line(`M75 ${y+2} L69 ${y-3}`,INK,2.2)+line(`M125 ${y+2} L131 ${y-3}`,INK,2.2)},
-    lash:(y=98)=>line(`M79 ${y-3} L73 ${y-7} M82 ${y-5} L79 ${y-10}`,INK,1.8)+line(`M121 ${y-3} L127 ${y-7} M118 ${y-5} L121 ${y-10}`,INK,1.8),
-    brow:(y=88,ang=0,col=INK,w=3)=>line(`M76 ${y+ang} L92 ${y-ang}`,col,w)+line(`M124 ${y+ang} L108 ${y-ang}`,col,w),
-    smile:(col='#8a3a3a')=>flat([[91,117],[109,117],[105,124],[95,124]],col),
-    grin:(col='#7a2e2e')=>flat([[85,115],[115,115],[109,127],[91,127]],col)+flat([[89,116],[111,116],[109,119],[91,119]],'#fff'),
-    flatmouth:()=>line('M93 121 L107 121',INK,3),
-    smirk:()=>line('M93 121 L102 123 L111 117',INK,3),
-    lips:(c='#c2304a')=>flat([[94,119],[100,117],[106,119],[100,124]],c),
-    wmouth:()=>line('M93 119 L96.5 123 L100 119 L103.5 123 L107 119',INK,2.4),
-    blush:(op=.45)=>flat(poly(74,112,7,6,0,1.2,.7),'#ff7f86',op)+flat(poly(126,112,7,6,0,1.2,.7),'#ff7f86',op),
-    capM:(h)=>facet([[58,96],[54,66],[70,46],[100,36],[130,46],[146,66],[142,96],[132,74],[114,64],[90,66],[70,74]],h,.25),
-    bangs:(h)=>facet([[56,102],[52,64],[72,42],[100,32],[128,42],[148,64],[144,102],[136,76],[120,66],[104,74],[88,64],[70,76]],h,.25),
-    part:(h)=>facet([[56,102],[52,64],[72,42],[100,32],[128,42],[148,64],[144,102],[136,78],[118,64],[100,62],[82,64],[64,78]],h,.25),
-    side:(h)=>facet([[56,104],[52,62],[74,40],[104,32],[130,42],[148,66],[144,102],[138,80],[124,68],[104,66],[80,78],[64,90]],h,.25),
-    longBack:(h)=>facet([[54,90],[58,54],[100,34],[142,54],[146,90],[156,180],[128,188],[72,188],[44,180]],h,.2),
-    bun:(h,x=100,y=36,r=15)=>facet(poly(x,y,r,7,-90),h,.3),
-    flower:(x,y,c='#ffd1dc',cc='#f2c14e',r=4)=>[0,1,2,3,4].map(i=>{const a=-Math.PI/2+i*2*Math.PI/5;return flat(poly(x+Math.cos(a)*r*1.2,y+Math.sin(a)*r*1.2,r,6),c)}).join('')+flat(poly(x,y,r*.6,6),cc),
+  const sc=(pts,cx,cy,sx,sy=sx)=>pts.map(([x,y])=>[cx+(x-cx)*sx,cy+(y-cy)*sy]);
+  const mv=(pts,dx,dy)=>pts.map(([x,y])=>[x+dx,y+dy]);
+  const both=(pts,col,h)=>facet(pts,col,h)+facet(mir(pts),col,h);
+  const ringPath=(cx,cy,r,n,r0=0,sx=1,sy=1)=>{const p=poly(cx,cy,r,n,r0,sx,sy);return 'M'+p.map(q=>f1(q[0])+' '+f1(q[1])).join('L')+'Z'};
+  const flower=(x,y,c='#ffd1dc',cc='#f2c14e',r=4)=>[0,1,2,3,4].map(i=>{const a=-Math.PI/2+i*2*Math.PI/5;return facet(poly(x+Math.cos(a)*r*1.15,y+Math.sin(a)*r*1.15,r,6),c,.35)}).join('')+flat(poly(x,y,r*.55,6),cc);
+
+  /* ---- 通用部件 ---- */
+  const BODY=[[6,206],[12,180],[30,163],[58,152],[84,147],[116,147],[142,152],[170,163],[188,180],[194,206]];
+  const FACE=[[60,86],[63,66],[72,52],[86,44],[100,42],[114,44],[128,52],[137,66],[140,86],[138,104],[131,120],[118,133],[100,140],[82,133],[69,120],[62,104]];
+  const P={
+    body:(c,w=1)=>facet(sc(BODY,100,206,w,1),c,.14),
+    robe:(c,trim,inner='#f6efe4',w=1)=>P.body(c,w)
+      +facet([[84,147],[116,147],[100,172]],inner,.12)
+      +facet([[78,149],[87,146],[103,178],[98,186]],trim,.2)+facet([[122,149],[113,146],[102,174],[97,170]],trim,.2),
+    armor:(c,plate)=>P.body(c)+facet(poly(40,170,25,7),plate,.3)+facet(poly(160,170,25,7),plate,.3)
+      +facet([[78,160],[122,160],[118,178],[82,178]],plate,.2)+facet([[82,182],[118,182],[114,200],[86,200]],plate,.2),
+    neck:(s)=>facet([[87,114],[113,114],[116,152],[84,152]],tone(s,.92),.12)+flat([[86,126],[114,126],[113,136],[100,142],[87,136]],tone(s,.7),.5),
+    ears:(s)=>{const e=[[53,89],[59,83],[66,87],[66,111],[60,114],[54,105]];return both(e,s,.25)+flat([[57,92],[61,89],[63,94],[63,106],[59,105]],tone(s,.82))+flat(mir([[57,92],[61,89],[63,94],[63,106],[59,105]]),tone(s,.82))},
+    face:(s,w=1,hh=1)=>facet(sc(FACE,100,90,w,hh),s,.24),
+    nose:(s)=>flat([[97,104],[103,104],[105.5,112],[100,114.5],[94.5,112]],tone(s,.86))+flat([[99,104],[101.5,104],[101,110],[99,110]],tone(s,1.12)),
+    eyes:(t='n',iris=INK,y=98,which=[85,115])=>{
+      let o='';
+      which.forEach(cx=>{
+        if(t==='shut'){o+=line(`M${cx-8} ${y} Q${cx} ${y-6} ${cx+8} ${y}`,INK,2.8);return}
+        if(t==='smile'){o+=line(`M${cx-8} ${y-1} Q${cx} ${y+5} ${cx+8} ${y-1}`,INK,2.8);return}
+        const big=t==='big',sharp=t==='sharp'||t==='fox',stern=t==='stern';
+        const hy=big?7:stern?4:sharp?4.2:5.5,wx=big?9:8.5;
+        const up=t==='fox'?(cx<100?-2.5:-2.5):0;
+        const sh=[[cx-wx,y+(t==='fox'?(cx<100?2:-2.5):0)],[cx-wx*.45,y-hy],[cx+wx*.45,y-hy],[cx+wx,y+(t==='fox'?(cx<100?-2.5:2):0)],[cx+wx*.45,y+hy*.85],[cx-wx*.45,y+hy*.85]];
+        o+=flat(sh,'#ffffff');
+        const ir=big?6:sharp||stern?3.6:4.4;
+        o+=flat(poly(cx+(cx<100?.8:-.8),y+.3,ir,8),iris)+flat(poly(cx+(cx<100?.8:-.8),y+.3,ir*.48,8),'#120e14');
+        o+=flat([[cx-1.5,y-ir*.75],[cx+1.6,y-ir*.75],[cx,y-ir*.15]],'#ffffff');
+        o+=line(`M${sh[0][0]} ${sh[0][1]} L${sh[1][0]} ${sh[1][1]-.6} L${sh[2][0]} ${sh[2][1]-.6} L${sh[3][0]} ${sh[3][1]}`,INK,sharp||stern?2.6:2);
+        if(sharp)o+=line(cx<100?`M${sh[0][0]} ${sh[0][1]} L${sh[0][0]-6} ${sh[0][1]-4}`:`M${sh[3][0]} ${sh[3][1]} L${sh[3][0]+6} ${sh[3][1]-4}`,INK,2.2);
+      });return o},
+    lash:(y=98)=>line(`M78 ${y-3} L72 ${y-7} M81 ${y-5} L77 ${y-10}`,INK,1.7)+line(`M122 ${y-3} L128 ${y-7} M119 ${y-5} L123 ${y-10}`,INK,1.7),
+    brows:(ang=0,w=3,col=INK,y=87)=>flat([[75,y+ang],[93,y-ang-1],[93,y-ang+w-1],[75,y+ang+w]],col)+flat(mir([[75,y+ang],[93,y-ang-1],[93,y-ang+w-1],[75,y+ang+w]]),col),
+    mouth:(t='smile',col='#a8434a')=>{
+      if(t==='smile')return flat([[91,119],[109,119],[105,124.5],[95,124.5]],col)+flat([[93,119],[107,119],[105,121],[95,121]],'#ffffff',.85);
+      if(t==='grin')return flat([[85,116],[115,116],[109,128],[91,128]],'#7a2e2e')+flat([[88,117],[112,117],[110,120.5],[90,120.5]],'#ffffff')+flat([[94,124],[106,124],[104,127],[96,127]],'#d9707a');
+      if(t==='flat')return line('M92 121 L108 121',INK,2.8);
+      if(t==='smirk')return line('M92 121 L101 123.5 L110 117.5',INK,2.8);
+      if(t==='lips')return flat([[92,119.5],[97,117.5],[100,118.5],[103,117.5],[108,119.5],[100,124.5]],col);
+      if(t==='w')return line('M92 119 L96 123 L100 119 L104 123 L108 119',INK,2.4);
+      if(t==='o')return flat(poly(100,121,3.6,8,0,1,1.2),'#7a2e2e');
+      if(t==='soft')return line('M93 120 Q100 125 107 120',INK,2.6);
+      return ''},
+    blush:(op=.45)=>flat(poly(73,112,7,8,0,1.25,.7),'#ff7f86',op)+flat(poly(127,112,7,8,0,1.25,.7),'#ff7f86',op),
+    /* 头发 */
+    capM:(h)=>facet([[57,98],[52,68],[62,50],[80,38],[100,34],[120,38],[138,50],[148,68],[143,98],[136,80],[126,68],[112,62],[100,66],[88,62],[72,68],[63,80]],h,.3),
+    spiky:(h)=>facet([[57,96],[53,66],[58,48],[70,52],[74,32],[88,44],[100,24],[112,44],[126,32],[130,52],[142,48],[147,66],[143,96],[134,74],[118,64],[100,68],[82,64],[66,74]],h,.3),
+    bangs:(h)=>facet([[55,104],[50,66],[64,44],[84,32],[100,30],[116,32],[136,44],[150,66],[145,104],[139,80],[131,70],[122,74],[114,64],[104,74],[94,64],[84,74],[73,68],[63,82]],h,.3),
+    part:(h)=>facet([[55,104],[50,66],[64,44],[84,33],[100,31],[116,33],[136,44],[150,66],[145,104],[140,82],[128,66],[110,58],[100,62],[90,58],[72,66],[60,82]],h,.3),
+    side:(h)=>facet([[55,106],[50,64],[66,42],[90,30],[112,30],[134,42],[150,66],[145,104],[140,82],[128,68],[110,64],[90,72],[72,86],[62,96]],h,.3),
+    longBack:(h)=>facet([[52,90],[54,58],[70,40],[100,30],[130,40],[146,58],[148,90],[158,178],[136,190],[64,190],[42,178]],h,.18),
+    shortBack:(h)=>facet([[52,94],[54,58],[72,40],[100,32],[128,40],[146,58],[148,94],[150,124],[130,132],[70,132],[50,124]],h,.2),
+    shine:(h)=>flat([[70,58],[90,44],[110,42],[96,50],[78,64]],tone(h,1.45),.45),
+    bun:(h,x=100,y=34,r=15)=>facet(poly(x,y,r,9,-90),h,.4),
+    bald:(s)=>flat([[76,52],[98,44],[118,48],[104,52],[84,58]],tone(s,1.18),.6),
+    beard:(c,long=1)=>facet([[68,112],[80,122],[100,128],[120,122],[132,112],[130,128+18*long],[116,146+30*long],[100,152+34*long],[84,146+30*long],[70,128+18*long]],c,.2),
+    stache:(c)=>facet([[81,117],[100,110],[119,117],[114,122],[100,117],[86,122]],c,.15),
+    crown:(c,gem='#d6304f',y=0)=>facet(mv([[70,58],[76,38],[88,52],[100,28],[112,52],[124,38],[130,58]],0,y),c,.35)+flat(poly(100,46+y,4.5,6),gem)+flat(poly(80,52+y,2.5,6),gem)+flat(poly(120,52+y,2.5,6),gem),
+    horn:(c,x=100)=>facet([[x-7,56],[x,18],[x+7,56]],c,.4),
+    ribbon:(c='#ffffff')=>line('M18 176 Q54 150 84 186 Q114 170 140 160 Q162 188 186 166',c,7,.9),
   };
-  function bgLayer(col){
-    const g=[];const N=4;
-    for(let i=0;i<=N;i++){g.push([]);for(let j=0;j<=N;j++){const x=j*200/N,y=i*200/N;const jx=(j>0&&j<N)?(rnd()-.5)*30:0,jy=(i>0&&i<N)?(rnd()-.5)*30:0;g[i].push([x+jx,y+jy])}}
+  const SK='#f2c6a0',SKF='#f6d1b5',SKL='#f6dcc4';
+  /* ---- 动物脸 ---- */
+  function monkey(fur,face,iris,ears6){
     let o='';
-    for(let i=0;i<N;i++)for(let j=0;j<N;j++){const a=g[i][j],b=g[i][j+1],c=g[i+1][j+1],d=g[i+1][j];
-      const f=()=>tone(col,1+(.5-(i+j)/(2*N))*.25+(rnd()-.5)*.12);
-      if((i+j)%2){o+=tri(a,b,c,f())+tri(a,c,d,f())}else{o+=tri(a,b,d,f())+tri(b,c,d,f())}}
+    if(ears6){[[47,80,9,-20],[43,99,10,0],[47,118,8.5,20]].forEach(([x,y,r,a])=>{const e=rot(poly(x,y,r,10,0,.72,1),x,y,a),i=rot(poly(x+1,y,r*.55,8,0,.6,1),x,y,a);o+=facet(e,fur,.35)+flat(i,tone(face,.85))+facet(mir(e),fur,.35)+flat(mir(i),tone(face,.85))})}
+    else o+=facet(poly(44,100,15,8),fur,.3)+flat(poly(44,100,8,7),tone(face,.92))+facet(poly(156,100,15,8),fur,.3)+flat(poly(156,100,8,7),tone(face,.92));
+    o+=facet([[52,88],[56,58],[76,40],[100,35],[124,40],[144,58],[148,88],[146,114],[130,138],[100,148],[70,138],[54,114]],fur,.3);
+    o+=facet([[88,44],[94,26],[100,40],[107,24],[112,44]],fur,.35);
+    o+=facet([[70,92],[73,75],[87,70],[100,80],[113,70],[127,75],[130,92],[128,113],[116,133],[100,139],[84,133],[72,113]],face,.2);
+    o+=P.eyes('n',iris,94)+flat([[96,105],[104,105],[100,110]],INK)+P.mouth('grin');
     return o;
   }
-  const CAMP={qj:{n:'取经团',c:'#e39b2d'},tt:{n:'天庭',c:'#3d7fc1'},mw:{n:'魔王',c:'#c8412f'},jg:{n:'精怪',c:'#8150b5'},rj:{n:'人间',c:'#3a9a6b'}};
-  const SK='#f2c9a5',SKF='#f6d3b8',HAIR='#2a2430';
+  /* ---- 角色 ---- */
   const D={
-    wk:()=>{const fur='#9a5b2a';return S.body('#c9422f')+S.vcol('#f2c14e')+S.neck('#d9a074')
-      +facet(poly(45,100,15,6),fur,.25)+flat(poly(45,100,8,6),'#e6b385')+facet(poly(155,100,15,6),fur,.25)+flat(poly(155,100,8,6),'#e6b385')
-      +facet([[54,86],[58,58],[78,42],[100,38],[122,42],[142,58],[146,86],[144,112],[128,136],[100,146],[72,136],[56,112]],fur,.25)
-      +facet([[88,46],[94,28],[100,42],[107,26],[112,46]],fur,.3)
-      +facet([[70,90],[74,74],[88,70],[100,80],[112,70],[126,74],[130,90],[128,112],[116,132],[100,138],[84,132],[72,112]],'#f2c99a',.18)
-      +S.eyes(94)+flat([[97,105],[103,105],[100,109]],INK)+S.grin()
-      +facet([[52,74],[70,62],[100,56],[130,62],[148,74],[148,82],[130,70],[100,64],[70,70],[52,82]],'#e5b51f',.35)
-      +facet(poly(52,78,6,6),'#e5b51f',.3)+facet(poly(148,78,6,6),'#e5b51f',.3)},
-    ts:()=>S.body('#b8342c')+facet([[30,184],[146,150],[160,172],[44,204]],'#e7c25a',.25)+S.neck(SK)+S.ears('#f4d4b6')+S.face('#f4d4b6')
-      +S.brow(89,1,INK,2.5)+S.shut(100)+S.smile()+S.blush(.3)
-      +facet([[56,62],[144,62],[144,73],[56,73]],'#cf972c',.25)
-      +facet([[58,64],[64,40],[78,54],[88,32],[100,50],[112,32],[122,54],[136,40],[142,64]],'#e3b343',.3),
-    bj:()=>{const s='#f3ae9f';return S.body('#2f3b5a')+S.vcol('#1d253b')+S.neck('#e5958a')
-      +facet([[62,66],[40,52],[32,78],[48,102],[60,88]],'#e48d80',.25)+facet(mir([[62,66],[40,52],[32,78],[48,102],[60,88]]),'#e48d80',.25)
-      +S.face(s,1.12)+S.eyes(90,.85)
-      +facet(poly(100,110,18,6,0,1,.68),'#eb9384',.2)+flat(poly(94,110,3,6),INK)+flat(poly(106,110,3,6),INK)
-      +flat([[93,126],[107,126],[104,131],[96,131]],'#8a3a3a')+S.blush(.35)},
-    ss:()=>{const s='#c69c7c';let beads='';for(let i=0;i<9;i++){const x=62+i*9.5;const y=150+20*(1-Math.pow((x-100)/40,2));beads+=facet(poly(x,y,5.5,6),'#efe2c4',.3)}
-      return S.body('#6b4f3a')+S.vcol('#d98a3d')+S.neck(s)+S.ears(s)+S.face(s)+S.brow(87,-1,INK,4.5)+S.eyes(99)
-      +facet([[68,114],[80,124],[100,130],[120,124],[132,114],[128,140],[112,156],[100,160],[88,156],[72,140]],'#8a3b22',.25)
-      +facet([[82,118],[100,111],[118,118],[112,122],[100,117],[88,122]],'#8a3b22',.2)+beads},
-    bl:()=>S.body('#eef1f5')+S.vcol('#2f8f8c')+S.neck('#f4d2b6')+S.ears('#f4d2b6')+S.face('#f4d2b6')+S.brow(89,.5)+S.eyes(99)+line('M93 121 L100 123 L107 121',INK,3)
-      +S.capM(HAIR)+facet(poly(100,40,11,6,-90),HAIR,.3)+flat([[91,48],[109,48],[109,53],[91,53]],'#2f8f8c')
-      +facet([[74,58],[64,34],[71,42],[69,28],[80,48]],'#e9c46a',.3)+facet(mir([[74,58],[64,34],[71,42],[69,28],[80,48]]),'#e9c46a',.3),
-    el:()=>S.body('#c5cad4')+facet(poly(40,168,24,6),'#a6adbc',.3)+facet(poly(160,168,24,6),'#a6adbc',.3)+line('M74 172 H126 M78 188 H122','#8e96a8',4)
-      +S.neck('#f0cdb0')+S.ears('#f0cdb0')+S.face('#f0cdb0')+S.brow(93,-3,INK,4)+S.eyes(101,.7)+S.flatmouth()
-      +facet([[56,90],[54,62],[70,44],[100,36],[130,44],[146,62],[144,90],[136,80],[126,64],[100,60],[74,64],[64,80]],'#d6a634',.35)
-      +facet([[92,40],[100,14],[108,40]],'#d6a634',.35)+flat(poly(100,52,5,6),'#c0392b')
-      +flat([[100,69],[104,77],[100,86],[96,77]],'#c0392b')+flat([[100,73],[102,77],[100,82],[98,77]],INK),
-    nz:()=>S.body('#f1a7b8')+line('M70 148 Q100 168 130 148','#e5b51f',7)
-      +facet([[14,176],[60,160],[100,172],[140,156],[186,168],[186,180],[140,168],[100,184],[60,172],[14,188]],'#d7262e',.3)
-      +S.neck(SKF)+S.ears(SKF)+S.face(SKF,.98)+S.brow(89,-2,INK,3.2)+S.big(100)+S.smile()+S.blush(.55)
-      +S.capM(HAIR)+S.bun(HAIR,66,46,13)+S.bun(HAIR,134,46,13)+flat([[100,66],[103,71],[100,76],[97,71]],'#d7262e'),
-    tb:()=>S.body('#f2ecd6')+S.vcol('#d6a634')+S.neck('#f2d2b6')+S.ears('#f2d2b6')+S.face('#f2d2b6')
-      +facet([[56,94],[54,66],[70,46],[100,38],[130,46],[146,66],[144,94],[136,72],[100,60],[64,72]],'#eeeeee',.2)+S.bun('#f4f4f4',100,38,11)
-      +S.smileEyes(100)+flat([[72,93],[92,86],[92,90],[70,99]],'#ffffff')+flat(mir([[72,93],[92,86],[92,90],[70,99]]),'#ffffff')
-      +facet([[70,112],[84,126],[100,130],[116,126],[130,112],[126,150],[112,176],[100,186],[88,176],[74,150]],'#f7f7f7',.12)
-      +facet([[82,116],[100,110],[118,116],[112,121],[100,117],[88,121]],'#ffffff',.1),
-    nm:()=>S.body('#2a2a33')+S.vcol('#c9a24a')+S.neck('#a06c4a')
-      +facet([[66,64],[48,52],[32,30],[30,12],[46,28],[64,42],[78,54]],'#efe1c0',.3)+facet(mir([[66,64],[48,52],[32,30],[30,12],[46,28],[64,42],[78,54]]),'#efe1c0',.3)
-      +S.ears('#b07a55')+S.face('#b07a55',1.1)+S.capM('#1e1a1f')+S.brow(89,-2.5,INK,5)+S.eyes(100)+S.grin()+line('M94 110 L100 116 L106 110','#e5b51f',3),
-    hh:()=>facet([[10,204],[4,170],[22,156],[16,134],[34,152],[40,204]],'#ffa53a',.3)+facet(mir([[10,204],[4,170],[22,156],[16,134],[34,152],[40,204]]),'#ffa53a',.3)
-      +S.body('#f6d0b0')+facet([[64,152],[100,142],[136,152],[100,204]],'#d7262e',.3)
-      +S.neck('#f6d0b0')+S.ears('#f6d0b0')+S.face('#f6d0b0')+S.brow(89,-2.5,INK,3.5)+S.big(101)+S.smirk()+S.blush(.6)
-      +facet([[58,94],[54,66],[60,50],[72,54],[78,36],[90,48],[100,28],[110,48],[122,36],[128,54],[140,50],[146,66],[142,94],[132,72],[100,64],[68,72]],HAIR,.3),
-    jj:()=>S.body('#d9a52b')+S.vcol('#8a2a1f')+S.neck('#d9a77e')+S.ears('#e8b98f')+S.face('#e8b98f')
-      +facet(poly(160,126,9,6),'#b0482a',.3)+facet(poly(160,150,14,7),'#b0482a',.3)+flat([[153,136],[167,136],[167,140],[153,140]],'#e5b51f')
-      +S.brow(90,-2.5,INK,3.5)+S.eyes(100,.6)+S.smirk()+S.capM('#2a2026')+facet([[93,54],[100,20],[107,54]],'#f0c43a',.35),
-    yj:()=>S.body('#c9cfd8')+S.vcol('#5a6378')+S.neck('#d9a77e')+S.ears('#e8b98f')+S.face('#e8b98f')
-      +facet([[34,150],[38,130],[33,120],[47,120],[42,130],[48,150],[45,168],[37,168]],'#dff0e8',.3)
-      +S.brow(91,-3,INK,3.5)+S.sharp(100)+S.smirk()+S.capM('#2a2026')+facet([[93,54],[100,20],[107,54]],'#eef1f4',.35),
+    wk:()=>P.robe('#c9422f','#f2c14e','#f7e3b0')+P.neck('#d9a074')+monkey('#9a5b2a','#f2c99a','#e0a020')
+      +facet([[52,74],[70,62],[100,56],[130,62],[148,74],[148,82],[130,70],[100,64],[70,70],[52,82]],'#e5b51f',.4)+facet(poly(52,78,6.5,7),'#e5b51f',.4)+facet(poly(148,78,6.5,7),'#e5b51f',.4),
+    le:()=>P.robe('#3a3a44','#9a9aa8','#c9c9d2')+P.neck('#b8a08a')+monkey('#4a4a52','#d8c0a8','#c0392b',true),
+    ts:()=>P.robe('#b8342c','#e7c25a','#f3e2c0')+line('M40 176 L70 198 M60 160 L94 196 M140 160 L106 196 M160 176 L130 198','#e7c25a',2.2,.8)
+      +P.neck('#f4d4b6')+P.ears('#f4d4b6')+P.face('#f4d4b6')+P.bald('#f4d4b6')+P.brows(1,2.4)+P.eyes('shut')+P.nose('#f4d4b6')+P.mouth('soft')+P.blush(.28)
+      +facet([[56,62],[144,62],[144,73],[56,73]],'#cf972c',.25)+facet([[58,64],[64,40],[78,54],[88,32],[100,50],[112,32],[122,54],[136,40],[142,64]],'#e3b343',.35),
+    bj:()=>{const s='#f3ae9f';return P.robe('#2f3b5a','#1d253b','#d9cdb8',1.06)+P.neck('#e5958a')
+      +both([[62,66],[40,50],[30,78],[46,104],[60,90]],'#e48d80',.3)+P.face(s,1.14,1.02)+P.eyes('n',INK,90)
+      +facet(poly(100,111,18,8,0,1,.7),'#eb9384',.3)+flat(poly(94,111,3,6),INK)+flat(poly(106,111,3,6),INK)
+      +P.brows(.5,2.4,INK,82)+flat([[92,126],[108,126],[104,131],[96,131]],'#8a3a3a')+P.blush(.35)},
+    ss:()=>{const s='#c69c7c';let beads='';for(let i=0;i<9;i++){const x=62+i*9.5;const y=150+20*(1-Math.pow((x-100)/40,2));beads+=facet(poly(x,y,5.5,7),'#efe2c4',.4)}
+      return P.robe('#6b4f3a','#d98a3d','#e8d6b8')+P.neck(s)+P.ears(s)+P.face(s)+P.bald(s)+P.brows(-1,4.2)+P.eyes('n')+P.nose(s)+P.beard('#8a3b22',.2)+P.stache('#8a3b22')+beads},
+    bl:()=>P.robe('#eef1f5','#2f8f8c','#ffffff')+P.neck('#f4d2b6')+P.ears('#f4d2b6')+P.face('#f4d2b6')+P.brows(0)+P.eyes('n')+P.nose('#f4d2b6')+P.mouth('soft')
+      +P.capM('#2a2430')+P.shine('#2a2430')+P.bun('#2a2430',100,40,11)+flat([[91,48],[109,48],[109,53],[91,53]],'#2f8f8c')
+      +both([[74,58],[64,34],[71,42],[69,28],[80,48]],'#e9c46a',.35),
+    el:()=>P.armor('#c5cad4','#a6adbc')+P.neck('#f0cdb0')+P.ears('#f0cdb0')+P.face('#f0cdb0')+P.brows(-3,3.6,INK,90)+P.eyes('stern')+P.nose('#f0cdb0')+P.mouth('flat')
+      +facet([[56,90],[54,62],[70,44],[100,36],[130,44],[146,62],[144,90],[136,80],[126,64],[100,60],[74,64],[64,80]],'#d6a634',.4)
+      +facet([[92,40],[100,12],[108,40]],'#d6a634',.4)+flat(poly(100,52,5,6),'#c0392b')+flat([[100,68],[104,76],[100,85],[96,76]],'#c0392b')+flat([[100,72],[102,76],[100,81],[98,76]],INK),
+    nz:()=>P.robe('#f1a7b8','#7fb069','#ffe8ee')+line('M70 148 Q100 168 130 148','#e5b51f',7)
+      +facet([[12,176],[60,160],[100,172],[140,156],[188,168],[188,180],[140,168],[100,184],[60,172],[12,188]],'#d7262e',.3)
+      +P.neck(SKF)+P.ears(SKF)+P.face(SKF,.97,.97)+P.brows(-2,3)+P.eyes('big')+P.nose(SKF)+P.mouth('smile')+P.blush(.55)
+      +P.capM('#2a2430')+P.bun('#2a2430',66,46,13)+P.bun('#2a2430',134,46,13)+flat([[100,65],[103,70],[100,75],[97,70]],'#d7262e'),
+    tb:()=>facet([[160,120],[166,120],[170,206],[164,206]],'#8a5a2b',.2)+facet(poly(163,108,16,9,0,.8,1.2),'#ffffff',.25)
+      +P.robe('#f2ecd6','#d6a634','#ffffff')+P.neck('#f2d2b6')+P.ears('#f2d2b6')+P.face('#f2d2b6')
+      +facet([[56,94],[54,66],[70,46],[100,38],[130,46],[146,66],[144,94],[136,72],[100,60],[64,72]],'#eeeeee',.25)+P.bun('#f4f4f4',100,38,11)
+      +P.eyes('smile')+flat([[72,93],[92,86],[92,90],[70,99]],'#ffffff')+flat(mir([[72,93],[92,86],[92,90],[70,99]]),'#ffffff')+P.nose('#f2d2b6')
+      +P.beard('#f7f7f7',1)+P.stache('#ffffff'),
+    tl:()=>P.robe('#5b6b8c','#e5c158','#efe8d6')+line('M34 186 Q60 170 76 196 M166 186 Q140 170 124 196','#e5c158',2,.7)
+      +P.neck('#f0cfb2')+P.ears('#f0cfb2')+P.face('#f0cfb2')
+      +facet([[56,92],[54,66],[70,46],[100,38],[130,46],[146,66],[144,92],[136,72],[100,60],[64,72]],'#f2f2f2',.25)
+      +facet([[84,42],[90,22],[100,32],[110,22],[116,42]],'#e5c158',.4)+flat(poly(100,30,3,6),'#c0392b')
+      +P.eyes('shut')+flat([[72,92],[92,86],[92,90],[68,100]],'#ffffff')+flat(mir([[72,92],[92,86],[92,90],[68,100]]),'#ffffff')+P.nose('#f0cfb2')
+      +P.beard('#f7f7f7',1.25)+P.stache('#ffffff')+facet(poly(40,150,8,8),'#e2a83a',.4)+facet(poly(40,168,12,9),'#e2a83a',.4)+flat([[34,157],[46,157],[46,160],[34,160]],'#c0392b'),
+    tw:()=>{let tw='';[[160,176,20],[160,158,16],[160,142,12],[160,128,9]].forEach(([x,y,w])=>tw+=facet([[x-w,y],[x+w,y],[x+w*.7,y-12],[x-w*.7,y-12]],'#e2b544',.3)+facet([[x-w-4,y-12],[x+w+4,y-12],[x+w*.5,y-16],[x-w*.5,y-16]],'#b8862a',.3));
+      return P.armor('#d9a52b','#b8862a')+P.neck(SK)+P.ears(SK)+P.face(SK)+P.brows(-2.5,4,INK,89)+P.eyes('stern')+P.nose(SK)+P.mouth('flat')+P.stache('#2a2430')+facet([[90,124],[110,124],[106,140],[100,144],[94,140]],'#2a2430',.2)
+      +P.capM('#2a2430')+P.crown('#e2b544','#2f8f8c',-4)+tw+facet(poly(160,110,6,8),'#f2d36b',.4)},
+    td:()=>facet([[36,110],[42,110],[46,206],[40,206]],'#8a5a2b',.2)+facet(poly(39,104,9,8),'#a06a34',.4)
+      +P.robe('#a0522d','#e5c158','#f5e6c8',1.04)+P.neck('#f2cfae')+P.ears('#f2cfae')+P.face('#f2cfae',1.04)
+      +P.eyes('smile',INK,99)+flat([[72,90],[92,86],[92,89],[72,94]],'#ffffff')+flat(mir([[72,90],[92,86],[92,89],[72,94]]),'#ffffff')+P.nose('#f2cfae')+P.blush(.6)
+      +facet([[74,116],[86,124],[100,126],[114,124],[126,116],[124,134],[112,146],[100,150],[88,146],[76,134]],'#f7f7f7',.2)+P.stache('#ffffff')
+      +facet([[58,74],[60,52],[78,40],[100,36],[122,40],[140,52],[142,74],[100,66]],'#3a2a26',.35)+facet([[50,74],[150,74],[146,80],[54,80]],'#2a1e1a',.2),
+    dh:()=>P.robe('#2f7f7a','#e5c158','#d8efe9')+P.neck('#d9c8a8')+P.ears('#d9c8a8')+P.face('#d9c8a8')
+      +both([[76,58],[66,38],[56,32],[62,40],[54,42],[66,46],[72,54]],'#c9b55a',.35)
+      +P.brows(-2,4,'#4a6a5a',89)+P.eyes('stern','#b8862a')+P.nose('#d9c8a8')
+      +line('M88 114 Q62 118 48 140 M112 114 Q138 118 152 140','#4a6a5a',2.6)+P.beard('#5f7f6f',.8)+P.stache('#4a6a5a')+P.crown('#e5c158','#2f8f8c',-2),
+    zy:()=>facet(poly(46,150,9,8,0,1,1.25),'#b9c96a',.4)+flat(poly(46,140,4,6),'#6a8a3a')
+      +P.robe('#e8e2d0','#8a6a3a','#ffffff')+P.neck(SK)+P.ears(SK)+P.face(SK)+P.brows(-1,3)+P.eyes('n')+P.nose(SK)
+      +facet([[94,122],[106,122],[108,150],[100,170],[92,150]],'#2a2430',.2)+facet([[80,118],[90,120],[84,150],[78,140]],'#2a2430',.2)+facet(mir([[80,118],[90,120],[84,150],[78,140]]),'#2a2430',.2)+P.stache('#2a2430')
+      +P.capM('#2a2430')+P.shine('#2a2430')+P.bun('#2a2430',100,36,12)+flat([[84,36],[116,32],[117,35],[84,39]],'#7fc8a0'),
+    nm:()=>P.armor('#2a2a33','#c9a24a')+P.neck('#a06c4a')
+      +both([[66,64],[46,52],[30,30],[28,10],[46,26],[64,40],[80,54]],'#efe1c0',.35)
+      +P.ears('#b07a55')+P.face('#b07a55',1.12)+P.capM('#1e1a1f')+P.brows(-2.5,5)+P.eyes('n')+P.nose('#b07a55')+P.mouth('grin')+line('M94 112 L100 118 L106 112','#e5b51f',3),
+    hh:()=>both([[10,206],[2,170],[20,156],[14,132],[34,152],[42,206]],'#ffa53a',.35)+both([[18,206],[16,182],[28,172],[34,206]],'#ffd36b',.3)
+      +P.body('#f6d0b0')+facet([[64,152],[100,142],[136,152],[100,206]],'#d7262e',.3)
+      +P.neck('#f6d0b0')+P.ears('#f6d0b0')+P.face('#f6d0b0',.98,.98)+P.brows(-2.5,3.4)+P.eyes('big')+P.nose('#f6d0b0')+P.mouth('smirk')+P.blush(.6)
+      +P.spiky('#2a2430')+P.shine('#2a2430'),
+    jj:()=>P.robe('#d9a52b','#8a2a1f','#f6e3b0')+P.neck('#d9a77e')+P.ears('#e8b98f')+P.face('#e8b98f')
+      +facet(poly(162,128,9,8),'#b0482a',.4)+facet(poly(162,152,14,9),'#b0482a',.4)+flat([[155,137],[169,137],[169,141],[155,141]],'#e5b51f')
+      +P.brows(-2.5,3.4,INK,89)+P.eyes('stern')+P.nose('#e8b98f')+P.mouth('smirk')+P.capM('#2a2026')+P.horn('#f0c43a'),
+    yj:()=>P.robe('#c9cfd8','#5a6378','#f3f5f8')+P.neck('#d9a77e')+P.ears('#e8b98f')+P.face('#e8b98f')
+      +facet([[34,152],[38,132],[33,122],[47,122],[42,132],[48,152],[45,170],[37,170]],'#dff0e8',.4)
+      +P.brows(-3,3.4,INK,90)+P.eyes('sharp')+P.nose('#e8b98f')+P.mouth('smirk')+P.capM('#2a2026')+P.horn('#eef1f4'),
     hf:()=>{const fur='#d9a441';return line('M14 50 q20 -16 36 0 q-12 8 -20 0 M150 30 q22 -12 36 4 q-12 6 -20 -2 M20 150 q18 -10 30 2','#ffffff',4,.45)
-      +S.body('#7a5a2a')+S.vcol('#c9a24a')+S.neck('#c08a36')
-      +facet([[60,74],[54,38],[82,58]],fur,.3)+facet(mir([[60,74],[54,38],[82,58]]),fur,.3)+flat([[62,68],[59,48],[75,60]],'#f3d38a')+flat(mir([[62,68],[59,48],[75,60]]),'#f3d38a')
-      +S.face(fur,1.04)+facet([[82,108],[100,100],[118,108],[114,124],[100,131],[86,124]],'#f5e0a8',.15)
-      +S.eyes(96,.75)+flat([[96,106],[104,106],[100,111]],INK)+line('M84 114 L66 110 M84 118 L66 120 M116 114 L134 110 M116 118 L134 120',INK,1.5)+line('M94 122 L100 125 L106 122',INK,2.5)},
-    hx:()=>{const fur='#2b2629';return S.body('#1f1f26')+facet([[30,184],[146,150],[160,172],[44,204]],'#c9a24a',.25)+S.neck('#3a3436')
-      +facet(poly(58,58,15,6),fur,.3)+flat(poly(58,58,8,6),'#5a4a48')+facet(poly(142,58,15,6),fur,.3)+flat(poly(142,58,8,6),'#5a4a48')
-      +S.face(fur,1.12)+facet(poly(100,114,18,6,0,1.1,.85),'#a88a72',.2)+flat(poly(100,106,5,6,0,1.2,.8),INK)
-      +S.eyes(94,.8,'#f2e6d8')+flat(poly(84,94,3,6),INK)+flat(poly(116,94,3,6),INK)+line('M93 120 L100 124 L107 120',INK,2.5)},
-    nr:()=>S.longBack(HAIR)+S.body('#b8335a')+S.vcol('#e2b544')+S.neck(SKF)+S.face(SKF)+S.eyes(99)+S.lash(99)+S.smile('#b8323b')+S.blush(.45)+S.part(HAIR)
-      +facet([[70,58],[76,40],[88,52],[100,30],[112,52],[124,40],[130,58]],'#e2b544',.35)+flat(poly(100,48,4.5,6),'#d6304f'),
-    ce:()=>facet(poly(162,40,22,12),'#f4efd2',.15)+flat(poly(32,40,2,4),'#fff')+flat(poly(48,72,1.6,4),'#fff')+flat(poly(178,100,1.8,4),'#fff')
-      +S.longBack(HAIR)+S.body('#cfe3f3')+line('M20 176 Q56 150 82 186 Q110 172 140 160 Q160 188 184 166','#ffffff',7,.9)
-      +S.neck(SKF)+S.face('#f8e2d2')+S.shut(100)+S.lash(100)+S.lips('#c75a6a')+S.blush(.3)+S.part(HAIR)
-      +line(ring(80,38,10,6,-90,1,1.6),HAIR,7)+line(ring(120,38,10,6,-90,1,1.6),HAIR,7)+flat(poly(100,58,4,6),'#9ec8e8'),
-    qx:()=>S.longBack('#3a2a30')+S.body('#f08fa8')+line('M20 172 Q60 156 92 182 Q130 160 184 176','#fff3f6',6,.9)+S.vcol('#ffffff')
-      +S.neck(SKF)+S.face(SKF)+S.big(100)+S.lash(100)+S.smile('#c24a62')+S.blush(.55)+S.bangs('#3a2a30')+S.flower(136,60)+S.flower(64,66,'#fff','#f2c14e',3),
-    yt:()=>{const ear=(x,a)=>facet(rot(poly(x,30,11,6,-90,1,2.8),x,58,a),'#ffffff',.2)+flat(rot(poly(x,32,5,6,-90,1,3.6),x,58,a),'#f6b3c4');
-      return ear(80,-12)+ear(120,12)+facet([[54,96],[52,60],[100,46],[148,60],[146,96],[150,132],[132,136],[122,118],[78,118],[68,136],[50,132]],'#f4f2f7',.15)
-      +S.body('#f29bb3')+S.vcol('#ffffff')+S.neck('#fae3d6')+S.face('#fae3d6')+S.big(101)+S.wmouth()+S.blush(.65)+S.bangs('#f4f2f7')},
+      +P.robe('#7a5a2a','#c9a24a','#e8d6a8')+P.neck('#c08a36')
+      +both([[60,76],[52,36],[84,58]],fur,.35)+flat([[62,70],[58,46],[76,60]],'#f3d38a')+flat(mir([[62,70],[58,46],[76,60]]),'#f3d38a')
+      +facet([[56,88],[60,60],[78,46],[100,42],[122,46],[140,60],[144,88],[140,110],[124,130],[100,140],[76,130],[60,110]],fur,.28)
+      +facet([[80,106],[100,98],[120,106],[116,124],[100,132],[84,124]],'#f5e0a8',.2)
+      +P.eyes('sharp','#7a4a10',94)+flat([[96,106],[104,106],[100,111]],INK)+line('M84 114 L64 110 M84 119 L64 122 M116 114 L136 110 M116 119 L136 122',INK,1.5)+line('M94 123 L100 126 L106 123',INK,2.4)},
+    hx:()=>{const fur='#2b2629';return facet([[0,206],[4,168],[26,148],[60,138],[100,134],[140,138],[174,148],[196,168],[200,206]],'#1f1f26',.16)
+      +facet([[24,186],[150,146],[166,170],[40,206]],'#c9a24a',.25)+line('M60 176 L80 200 M100 166 L120 192','#a8822a',2,.8)
+      +facet(poly(52,52,19,9),fur,.35)+flat(poly(52,52,10,8),'#6a5552')+facet(poly(148,52,19,9),fur,.35)+flat(poly(148,52,10,8),'#6a5552')
+      +facet([[46,90],[50,64],[66,46],[100,38],[134,46],[150,64],[154,90],[152,116],[138,136],[100,148],[62,136],[48,116]],fur,.3)
+      +facet(poly(70,112,11,8,0,1.1,.85),'#3d3436',.3)+facet(poly(130,112,11,8,0,1.1,.85),'#3d3436',.3)
+      +facet(poly(100,116,20,9,0,1.15,.9),'#b8977c',.3)+facet(poly(100,106,6,7,0,1.3,.85),'#141014',.4)
+      +flat(poly(80,92,5,8),'#f2e6d8')+flat(poly(120,92,5,8),'#f2e6d8')+flat(poly(80.5,92.5,3,8),INK)+flat(poly(119.5,92.5,3,8),INK)+flat(poly(79,91,1.2,6),'#fff')+flat(poly(118.5,91,1.2,6),'#fff')
+      +line('M92 124 Q100 130 108 124',INK,2.6)+line('M100 112 L100 122',INK,2)},
+    hp:()=>P.robe('#d4a21f','#7a4a14','#f3dd95')+facet([[40,160],[70,146],[100,152],[130,146],[160,160],[150,172],[100,164],[50,172]],'#8a8a92',.3)
+      +P.neck('#e6c09a')+P.ears('#e6c09a')+P.face('#e6c09a')+P.brows(-2.5,3.6)+P.eyes('sharp','#b8862a')+P.nose('#e6c09a')+P.mouth('smirk')+flat([[95,123],[97,123],[96,127]],'#fff')
+      +both([[62,66],[54,34],[80,52]],'#7a7a84',.35)+P.capM('#3a3236')+P.shine('#3a3236'),
+    dp:()=>both([[60,160],[20,118],[4,130],[2,100],[12,84],[30,96],[40,80],[58,104],[74,148]],'#e8b23a',.25)
+      +P.robe('#b5341f','#f0c43a','#f7e0a0')+P.neck(SK)+P.ears(SK)+P.face(SK,.98)+P.brows(-3,3.4)+P.eyes('sharp','#c9861a')
+      +flat([[97,102],[103,102],[106,114],[100,117],[96,112]],tone(SK,.84))+P.mouth('smirk')
+      +P.capM('#3a2a20')+facet([[64,62],[70,30],[80,50],[88,22],[96,46],[104,18],[112,46],[120,22],[128,50],[136,30],[138,62],[100,56]],'#f0c43a',.35),
+    /* 女 */
     bg:()=>line('M10 60 q30 -14 60 0 M120 28 q30 -12 60 2 M140 182 q20 -8 40 0','#ffffff',5,.3)
-      +S.longBack('#e5e1ee')+S.body('#e9e7f0')+S.vcol('#4a3b63')+S.neck('#f1ebf3')+S.face('#f1ebf3')
-      +flat(poly(84,95,8,6,0,1.3,.6),'#8b6bb5',.35)+flat(poly(116,95,8,6,0,1.3,.6),'#8b6bb5',.35)+S.sharp(100)+S.lips()+S.side('#e5e1ee')
-      +facet(poly(140,64,8.5,7),'#ffffff',.2)+flat(poly(137,63,2.3,6),INK)+flat(poly(143,63,2.3,6),INK)+flat([[135,69],[145,69],[144,74],[136,74]],'#ffffff'),
-    zz:()=>line('M0 0 L96 30 M0 0 L80 70 M0 0 L40 96 M0 0 L10 100 M34 11 L13 34 M64 20 L26 64 M88 28 L36 90','#ffffff',1.6,.35)
-      +S.longBack('#3b2148')+S.body('#a865c9')+S.vcol('#2b1838')+S.neck(SKF)+S.face(SKF)
-      +line('M78 99 L85 95 L92 99',INK,3)+flat([[109,99],[112,94],[118,94],[121,99],[118,104],[112,104]],INK)+S.lash(99)+S.smile('#a8305a')+S.blush(.45)+S.bangs('#3b2148')
-      +flat(poly(62,64,5,6),INK)+flat(poly(62,57,3.5,6),INK)+line('M58 64 L51 60 M58 66 L51 69 M66 64 L73 60 M66 66 L73 69',INK,1.8),
-    xz:()=>{let tail='';const pts=[[128,40],[136,30],[146,24],[156,24],[164,30],[168,40]];pts.forEach((p,i)=>tail+=facet(poly(p[0],p[1],5.5-i*.3,6),'#c0392b',.3));
-      return S.longBack('#3a1820')+S.body('#5a1e2a')+S.vcol('#d6a634')+S.neck('#f3d0b6')+S.face('#f3d0b6')+S.brow(90,-2.5,INK,2.8)+S.sharp(100)+S.lips('#8e1c2c')+S.side('#3a1820')
-      +S.bun('#3a1820',122,40,13)+tail+facet([[164,40],[176,46],[166,50]],'#c0392b',.3)},
-    xx:()=>S.flower(30,40,'#ffe3e8')+S.flower(172,150,'#ffe3e8')+S.longBack('#3a2a26')+S.body('#f6c2a8')+S.vcol('#7aa35a')+S.neck(SKF)+S.face(SKF)
-      +S.shut(100)+S.lash(100)+S.smile('#c45a5a')+S.blush(.5)+S.part('#3a2a26')+S.flower(64,62,'#ffe3e8')+S.flower(136,58,'#ffffff')+S.flower(148,72,'#ffd1dc','#f2c14e',3),
-    ym:()=>facet([[64,60],[58,24],[88,46]],'#c99a63',.3)+facet(mir([[64,60],[58,24],[88,46]]),'#c99a63',.3)+flat([[66,54],[63,34],[80,48]],'#f6c9c0')+flat(mir([[66,54],[63,34],[80,48]]),'#f6c9c0')
-      +S.longBack('#c99a63')+S.body('#f3d6e0')+S.vcol('#e2b544')+S.neck('#f7e6dc')+S.face('#f7e6dc')
-      +flat([[76,101],[84,95],[93,97],[86,102]],INK)+flat(mir([[76,101],[84,95],[93,97],[86,102]]),INK)+S.lash(98)+S.lips('#d0506a')+S.blush(.4)+S.part('#c99a63'),
-    tf:()=>facet([[150,40],[176,60],[184,96],[174,128],[156,140],[140,120],[136,84],[140,56]],'#6aa84f',.3)+line('M156 50 L158 136 M157 80 L140 70 M157 80 L178 72 M157 106 L138 98 M158 106 L180 98','#3f7a32',2.5)
+      +P.longBack('#e5e1ee')+P.robe('#e9e7f0','#4a3b63','#ffffff')+P.neck('#f1ebf3')+P.face('#f1ebf3')
+      +flat(poly(84,94,9,8,0,1.3,.6),'#8b6bb5',.35)+flat(poly(116,94,9,8,0,1.3,.6),'#8b6bb5',.35)+P.eyes('sharp','#5a3d7a')+P.nose('#f1ebf3')+P.mouth('lips','#b8263e')+P.side('#e5e1ee')+P.shine('#d8d2e6')
+      +facet(poly(140,64,8.5,8),'#ffffff',.3)+flat(poly(137,63,2.3,6),INK)+flat(poly(143,63,2.3,6),INK)+flat([[135,69],[145,69],[144,74],[136,74]],'#ffffff'),
+    nr:()=>P.longBack('#2b2230')+P.robe('#b8335a','#e2b544','#fbe3ea')+P.neck(SKF)+P.face(SKF)+P.eyes('n','#4a2a2a')+P.lash()+P.nose(SKF)+P.mouth('lips','#c2304a')+P.blush(.45)+P.part('#2b2230')+P.shine('#2b2230')+P.crown('#e2b544'),
+    tf:()=>facet([[150,40],[176,60],[184,96],[174,128],[156,140],[140,120],[136,84],[140,56]],'#6aa84f',.3)+line('M156 50 L158 136 M157 80 L140 70 M157 80 L178 72 M157 106 L138 98 M158 106 L180 98','#3f7a32',2.4)
       +facet([[154,136],[162,136],[160,184],[156,184]],'#8a5a2b',.2)
-      +S.body('#2f6d4f')+S.vcol('#e05a3a')+S.neck(SKF)+S.ears(SKF)+S.face(SKF)+S.brow(89,-2.5,INK,3)+S.eyes(100)+S.lash(100)+S.smile('#b8323b')+S.blush(.35)
-      +S.bangs(HAIR)+S.bun(HAIR,100,36,16)+line('M80 32 L122 42','#e2b544',4)
+      +P.robe('#2f6d4f','#e05a3a','#f3e6d8')+P.neck(SKF)+P.ears(SKF)+P.face(SKF)+P.brows(-2.5,2.8)+P.eyes('n')+P.lash()+P.nose(SKF)+P.mouth('lips','#b8323b')+P.blush(.35)
+      +P.bangs('#2b2230')+P.shine('#2b2230')+P.bun('#2b2230',100,34,16)+line('M80 30 L122 40','#e2b544',4),
+    ce:()=>facet(poly(162,40,22,14),'#f4efd2',.2)+flat(poly(32,40,2,4),'#fff')+flat(poly(48,72,1.6,4),'#fff')+flat(poly(178,100,1.8,4),'#fff')
+      +P.longBack('#2b2230')+P.robe('#cfe3f3','#ffffff','#eef6fc')+P.ribbon()
+      +P.neck('#f8e2d2')+P.face('#f8e2d2')+P.eyes('shut')+P.lash(99)+P.nose('#f8e2d2')+P.mouth('lips','#d0607a')+P.blush(.3)+P.part('#2b2230')+P.shine('#2b2230')
+      +line(ringPath(80,36,10,8,-90,1,1.6),'#2b2230',7)+line(ringPath(120,36,10,8,-90,1,1.6),'#2b2230',7)+flat(poly(100,58,4,6),'#9ec8e8'),
+    qx:()=>P.longBack('#3a2a30')+P.robe('#f08fa8','#ffffff','#ffe6ee')+P.ribbon('#fff3f6')
+      +P.neck(SKF)+P.face(SKF)+P.eyes('big','#5a3a2a')+P.lash()+P.nose(SKF)+P.mouth('smile','#c24a62')+P.blush(.55)+P.bangs('#3a2a30')+P.shine('#3a2a30')+flower(136,58)+flower(64,64,'#ffffff','#f2c14e',3.2),
+    zz:()=>line('M0 0 L96 30 M0 0 L80 70 M0 0 L40 96 M0 0 L10 100 M34 11 L13 34 M64 20 L26 64 M88 28 L36 90','#ffffff',1.6,.35)
+      +P.longBack('#3b2148')+P.robe('#a865c9','#2b1838','#efe0f7')+P.neck(SKF)+P.face(SKF)
+      +line('M77 99 Q85 93 93 99',INK,2.8)+P.eyes('n','#4a2a5a',98,[115])+P.lash()+P.nose(SKF)+P.mouth('smile','#a8305a')+P.blush(.45)+P.bangs('#3b2148')+P.shine('#3b2148')
+      +flat(poly(62,64,5,6),INK)+flat(poly(62,57,3.5,6),INK)+line('M58 64 L51 60 M58 66 L51 69 M66 64 L73 60 M66 66 L73 69',INK,1.8),
+    yt:()=>{const ear=(x,a)=>facet(rot(poly(x,30,11,8,-90,1,2.8),x,58,a),'#ffffff',.25)+flat(rot(poly(x,32,5,6,-90,1,3.6),x,58,a),'#f6b3c4');
+      return ear(80,-12)+ear(120,12)+P.shortBack('#f4f2f7')+P.robe('#f29bb3','#ffffff','#ffeef3')+P.neck('#fae3d6')+P.face('#fae3d6')+P.eyes('big','#c0505a')+P.nose('#fae3d6')+P.mouth('w')+P.blush(.65)+P.bangs('#f4f2f7')+P.shine('#dcd8e6')},
+    xz:()=>{let tail='';[[128,40],[136,30],[146,24],[156,24],[164,30],[168,40]].forEach((p,i)=>tail+=facet(poly(p[0],p[1],5.6-i*.3,7),'#c0392b',.4));
+      return P.longBack('#3a1820')+P.robe('#5a1e2a','#d6a634','#f1dcc8')+P.neck('#f3d0b6')+P.face('#f3d0b6')+P.brows(-2.5,2.6)+P.eyes('sharp','#7a1c2c')+P.nose('#f3d0b6')+P.mouth('lips','#8e1c2c')+P.side('#3a1820')+P.shine('#3a1820')
+      +P.bun('#3a1820',122,40,13)+tail+facet([[164,40],[176,46],[166,50]],'#c0392b',.4)},
+    xx:()=>flower(30,40,'#ffe3e8')+flower(172,150,'#ffe3e8')+P.longBack('#3a2a26')+P.robe('#f6c2a8','#7aa35a','#fff1e8')+P.neck(SKF)+P.face(SKF)
+      +P.eyes('shut')+P.lash(99)+P.nose(SKF)+P.mouth('smile','#c45a5a')+P.blush(.5)+P.part('#3a2a26')+P.shine('#3a2a26')+flower(64,62,'#ffe3e8')+flower(136,58,'#ffffff')+flower(148,72,'#ffd1dc','#f2c14e',3),
+    ym:()=>both([[64,60],[58,22],[88,46]],'#c99a63',.35)+flat([[66,54],[63,32],[80,48]],'#f6c9c0')+flat(mir([[66,54],[63,32],[80,48]]),'#f6c9c0')
+      +P.longBack('#c99a63')+P.robe('#f3d6e0','#e2b544','#fff3f7')+P.neck('#f7e6dc')+P.face('#f7e6dc')+P.eyes('fox','#8a5a2a')+P.lash()+P.nose('#f7e6dc')+P.mouth('lips','#d0506a')+P.blush(.4)+P.part('#c99a63')+P.shine('#c99a63'),
+    dy:()=>facet(poly(60,48,17,9),'#e8e2ea',.35)+flat(poly(60,48,9,8),'#f6c4cc')+facet(poly(140,48,17,9),'#e8e2ea',.35)+flat(poly(140,48,9,8),'#f6c4cc')
+      +P.longBack('#f1ede6')+P.robe('#d9c27a','#8a6a2a','#fbf3d8')+P.neck('#f8e6da')+P.face('#f8e6da')+P.eyes('big','#4a3020')+P.lash()
+      +flat([[97,104],[103,104],[104,110],[100,112],[96,110]],'#e8b94a')+P.mouth('smile','#c45a5a')+P.blush(.55)+line('M80 112 L66 110 M80 116 L66 118 M120 112 L134 110 M120 116 L134 118','#b8a0a0',1.3)+P.bangs('#f1ede6')+P.shine('#d8d0c8'),
+    js:()=>P.robe('#8e2c3c','#e2b544','#f7e6d0')+P.neck(SKF)+P.ears(SKF)+P.face(SKF)+P.eyes('n','#4a2a2a')+P.lash()+P.nose(SKF)+P.mouth('lips','#a8263c')+P.blush(.3)
+      +P.part('#2b2230')+P.shine('#2b2230')+P.bun('#2b2230',100,30,17)+facet([[112,34],[146,22],[150,28],[118,40]],'#e2b544',.4)+flat(poly(148,25,4,6),'#d6304f')
+      +line('M140 30 L140 46 M146 28 L146 44','#e2b544',1.6)+flat(poly(140,48,2.4,6),'#d6304f')+flat(poly(146,46,2.4,6),'#2f8f8c'),
+    gc:()=>{const braid=x=>[0,1,2,3,4].map(i=>facet(poly(x,110+i*12,6.5-i*.4,7),'#2b2230',.4)).join('')+flat(poly(x,172,4,6),'#d7262e');
+      return braid(56)+braid(144)+P.robe('#5b8fd6','#ffffff','#e8f0fb')+flower(70,176,'#ffffff','#f2c14e',2.6)+flower(130,184,'#ffffff','#f2c14e',2.6)
+      +P.neck(SKF)+P.ears(SKF)+P.face(SKF)+P.eyes('big','#4a3020')+P.nose(SKF)+P.mouth('smile','#c24a5a')+P.blush(.6)+P.bangs('#2b2230')+P.shine('#2b2230')},
+    bh:()=>P.longBack('#2b2230')+P.robe('#e7a4c4','#f6e08a','#fff1f7')+P.neck(SKF)+P.face(SKF)+P.eyes('n','#4a2a3a')+P.lash()+P.nose(SKF)+P.mouth('smile','#c2406a')+P.blush(.45)
+      +P.part('#2b2230')+P.shine('#2b2230')+flower(70,52,'#ffd1dc')+flower(86,40,'#fff3b0','#e8833a')+flower(100,36,'#ffb3c6')+flower(114,40,'#ffffff')+flower(130,52,'#ffd1dc'),
+    ls:()=>facet([[34,96],[40,96],[44,206],[38,206]],'#6a4a2a',.2)+facet(poly(37,88,9,8),'#c9a24a',.4)
+      +P.robe('#6f7d6a','#d6c27a','#ece6d4')+P.neck('#f0d0b8')+P.ears('#f0d0b8')+P.face('#f0d0b8')+P.eyes('smile')+P.nose('#f0d0b8')+P.mouth('soft')+P.blush(.35)
+      +line('M70 108 L76 112 M130 108 L124 112','#c9a08a',1.6)+facet([[56,92],[54,64],[70,46],[100,38],[130,46],[146,64],[144,92],[136,72],[100,62],[64,72]],'#e8e6ea',.25)+P.bun('#e8e6ea',100,34,14)+line('M86 32 L114 28','#6aa84f',3),
+    wm:()=>P.robe('#7a2140','#e5b84a','#f7e6c8')+P.neck(SKF)+P.ears(SKF)+P.face(SKF)+P.eyes('n','#3a2a2a')+P.lash()+P.nose(SKF)+P.mouth('lips','#a8263c')+P.blush(.3)
+      +P.part('#2b2230')+P.shine('#2b2230')+facet([[60,62],[66,30],[80,46],[90,18],[100,38],[110,18],[120,46],[134,30],[140,62],[100,54]],'#e5b84a',.4)
+      +flat(poly(100,40,5,6),'#d6304f')+flat(poly(80,48,3,6),'#2f8f8c')+flat(poly(120,48,3,6),'#2f8f8c')+flat(poly(62,116,3,6),'#e5b84a')+flat(poly(138,116,3,6),'#e5b84a'),
+    jw:()=>{let tails='';for(let i=0;i<9;i++){const a=-150+i*15;tails+=facet(rot([[100,150],[92,60],[100,30],[108,60]],100,150,a+90),i%2?'#f0a050':'#e8833a',.3)+flat(rot([[100,60],[96,40],[100,30],[104,40]],100,150,a+90),'#ffffff',.9)}
+      return tails+both([[64,60],[58,22],[88,46]],'#e8833a',.35)+flat([[66,54],[63,32],[80,48]],'#ffffff')+flat(mir([[66,54],[63,32],[80,48]]),'#ffffff')
+      +P.longBack('#d9702a')+P.robe('#e8833a','#ffffff','#fff0e0')+P.neck(SKF)+P.face(SKF)+P.eyes('fox','#c0602a')+P.lash()+P.nose(SKF)+P.mouth('lips','#c2304a')+P.blush(.35)+P.part('#d9702a')+P.shine('#d9702a')},
+    tz:()=>P.longBack('#2b2230')+P.robe('#e0a83a','#c0392b','#fff2d6')+P.neck('#efc8a6')+P.face('#efc8a6')+P.eyes('big','#3a2a20')+P.lash()+P.nose('#efc8a6')+P.mouth('smile','#b8323b')+P.blush(.4)
+      +P.part('#2b2230')+P.shine('#2b2230')+line('M64 60 Q100 44 136 60','#e5c158',3)+line('M100 50 L100 64','#e5c158',2)+flat([[100,64],[104,69],[100,75],[96,69]],'#c0392b')+flat(poly(64,62,3,6),'#2f8f8c')+flat(poly(136,62,3,6),'#2f8f8c'),
+    ln:()=>facet(poly(160,150,12,10),'#f4f0ff',.3)+flat(poly(156,146,4,6),'#ffffff',.9)
+      +P.robe('#7fc8c0','#ffffff','#e6f7f4')+P.neck(SKF)+P.ears(SKF)+P.face(SKF,.97,.97)+P.eyes('big','#2f6f7a')+P.nose(SKF)+P.mouth('smile','#c24a62')+P.blush(.5)
+      +P.capM('#2b2230')+P.shine('#2b2230')+P.bun('#2b2230',68,44,13)+P.bun('#2b2230',132,44,13)+flat(poly(68,44,3.5,6),'#f4f0ff')+flat(poly(132,44,3.5,6),'#f4f0ff'),
+    wq:()=>P.longBack('#1f2a44')+P.robe('#2e6fa8','#e5c158','#dceefa')+P.neck(SKF)+P.face(SKF)+P.eyes('sharp','#2e6fa8')+P.lash()+P.nose(SKF)+P.mouth('lips','#b8323b')+P.blush(.35)
+      +P.side('#1f2a44')+P.shine('#1f2a44')+both([[74,50],[66,28],[72,34],[72,22],[82,42]],'#7fd0d8',.35)+flat(poly(70,90,2.4,6),'#f4f0ff'),
+    yw:()=>P.robe('#9bb7a6','#f0e6d0','#f7f3ea')+P.neck(SKF)+P.ears(SKF)+P.face(SKF)+P.eyes('shut')+P.lash(99)+P.nose(SKF)+P.mouth('lips','#b8506a')+P.blush(.3)
+      +P.part('#2b2230')+P.shine('#2b2230')+P.bun('#2b2230',100,30,16)+line('M78 34 L120 24','#7fc8a0',3.4)+line('M84 38 L124 30','#e5c158',2.2),
+    mh:()=>both([[64,60],[58,22],[88,46]],'#f4f0f4',.35)+flat([[66,54],[63,32],[80,48]],'#f6c9d0')+flat(mir([[66,54],[63,32],[80,48]]),'#f6c9d0')
+      +P.longBack('#f0eaf0')+P.robe('#c43a6a','#e5c158','#fde6ee')+P.neck('#f8ebe6')+P.face('#f8ebe6')
+      +flat(poly(84,94,9,8,0,1.3,.6),'#e0607a',.35)+flat(poly(116,94,9,8,0,1.3,.6),'#e0607a',.35)+P.eyes('fox','#a0305a')+P.lash()+P.nose('#f8ebe6')+P.mouth('lips','#c2203a')+flat(poly(112,116,1.2,6),INK)+P.side('#f0eaf0')+P.shine('#d8cfe0')
   };
+  function bgLayer(col){
+    const N=5,g=[];
+    for(let i=0;i<=N;i++){g.push([]);for(let j=0;j<=N;j++){const x=j*200/N,y=i*200/N;const e=(i>0&&i<N&&j>0&&j<N);g[i].push([x+(e?(rnd()-.5)*24:0),y+(e?(rnd()-.5)*24:0),rnd()*18])}}
+    let o='';
+    for(let i=0;i<N;i++)for(let j=0;j<N;j++){const a=g[i][j],b=g[i][j+1],c=g[i+1][j+1],d=g[i+1][j];
+      if((i+j)%2){o+=tri(a,b,c,shade(a,b,c,col))+tri(a,c,d,shade(a,c,d,col))}else{o+=tri(a,b,d,shade(a,b,d,col))+tri(b,c,d,shade(b,c,d,col))}}
+    return o+flat(poly(100,96,74,24),tone(col,1.18),.35);
+  }
+  const CAMP={qj:{n:'取经团',c:'#e39b2d'},tt:{n:'天庭',c:'#3d7fc1'},mw:{n:'魔王',c:'#c8412f'},jg:{n:'精怪',c:'#8150b5'},rj:{n:'人间',c:'#3a9a6b'}};
   function draw(k,camp){
-    seed=7+[...k].reduce((s,c)=>s+c.charCodeAt(0),0);
+    seed=7+[...k].reduce((s,c)=>s+c.charCodeAt(0)*31,0)%9973;
     const id='cp'+k+(draw.n=(draw.n||0)+1);
     return `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="角色头像"><defs><clipPath id="${id}"><circle cx="100" cy="100" r="100"/></clipPath></defs><g clip-path="url(#${id})">${bgLayer(CAMP[camp].c)}${D[k]()}</g></svg>`;
   }
@@ -595,8 +717,226 @@ const XY_QS=[
 ];
 let XY_BIAS={};
 
-const XY_DIV=3.5;
-XY_BIAS={"wk":-0.066,"ts":0.106,"bj":0.534,"ss":0.134,"bl":0.301,"el":-0.42,"nz":0.336,"tb":0.199,"nm":0.434,"hh":-0.52,"jj":-0.321,"yj":-0.572,"hf":-0.419,"hx":0.276,"bg":-0.673,"nr":-0.039,"tf":0.335,"ce":0.097,"qx":0.126,"zz":-0.159,"yt":0.341,"xz":-0.278,"xx":0.066,"ym":0.183};
+/* ---------- 西游测试：新增角色 ---------- */
+XY.push(
+{k:'le',g:'m',camp:'mw',n:'六耳猕猴',v:[-1,0,-1,1],tag:'善于观察，模仿能力一流',
+ p:'你观察力极强，善于察言观色，别人一句话、一个表情，你就能读出很多信息。你学东西快，模仿能力一流，看别人做一遍就能上手。你心里有自己的野心，不甘心只做配角，但也常常因为太想证明自己而想走捷径。你冷静、低调，很少把真实想法摆在脸上。',
+ story:'原著里的六耳猕猴能听千里之外的声音，善知世间万物。它趁孙悟空被唐僧赶走时，变成悟空的模样打伤唐僧、抢走行李，连众神都分不清真假，最后才被如来识破。',
+ s:['观察力强，善于读懂别人','学习和模仿能力一流','冷静，不动声色','有野心，敢想'],
+ b:['容易走捷径，忽略真功夫','太想取代别人，而不是做自己','不轻易信任别人'],
+ work:'你适合需要洞察力和学习力的工作，比如市场调研、产品分析、谈判、咨询。你上手快，但要沉下心来建立自己的核心能力。',
+ love:'你很会读懂对方的心思，但不太愿意暴露自己。真正的亲密，需要你先放下伪装。',
+ friend:'朋友觉得你很懂人心，聊天很舒服，但有时又觉得看不透你。',
+ a:['模仿是起点，原创才是终点','把野心用在正道上','试着对信任的人敞开心扉'],
+ mate:'黄风怪。两个低调的人，各干各的也很默契。',rival:'孙悟空。世上只能有一个齐天大圣。'},
+{k:'tl',g:'m',camp:'tt',n:'太上老君',v:[-.5,-1,-.5,-1],tag:'沉稳睿智，凡事心中有数',
+ p:'你沉稳、睿智，凡事看得长远，很少被眼前的得失左右。你有丰富的经验和深厚的积累，话不多，但往往一针见血。你重视秩序和规矩，做事有章法。别人遇到难题时，常常会想到来问你。你的缺点是有时太淡定，显得不够热情。',
+ story:'原著里的太上老君在兜率宫炼丹，孙悟空偷吃了他的金丹，又被关进八卦炉炼了七七四十九天，却因祸得福炼出了火眼金睛。金角大王、银角大王原来都是他身边看炉的童子。',
+ s:['睿智，看问题深远','经验丰富，有积累','沉稳，遇事不慌','有章法，做事讲方法'],
+ b:['太淡定，显得不够热情','有时管不住身边的人','不爱解释，让人摸不透'],
+ work:'你适合需要经验和判断的岗位，比如技术专家、顾问、研究员、高层管理。你是团队里的定海神针。',
+ love:'你感情内敛，不善表达，但非常可靠。你需要一个能理解你沉默的人。',
+ friend:'朋友把你当成人生导师，遇到大事都想听听你的意见。',
+ a:['偶尔表达一下热情，别让人觉得你冷','看好身边的人和事，别让小疏忽出大问题','把你的经验分享出来'],
+ mate:'太白金星。一个懂谋略，一个懂沟通，天庭最强顾问团。',rival:'孙悟空。你炼的金丹，他吃得最香。'},
+{k:'tw',g:'m',camp:'tt',n:'托塔天王',v:[0,.5,-.5,-1],tag:'严肃认真，责任感爆棚的守护者',
+ p:'你严肃、认真，责任感很强，是团队里最守规矩的那个人。你对自己和别人都要求严格，说一不二。你习惯担起保护和管理的责任，有你在，大家会觉得很踏实。但你有时太严厉，不太会表达温情，让身边的人觉得有压力。',
+ story:'原著里的托塔天王李靖是天庭的大将，手托一座玲珑宝塔。孙悟空大闹天宫时，他奉命带兵讨伐。他的儿子就是哪吒，后来他们父子还一起收服了无底洞的老鼠精。',
+ s:['责任感强，敢担当','守纪律，值得信赖','有威严，镇得住场面','执行力强，令行禁止'],
+ b:['太严厉，让人有压力','不太会表达温情','有时太死板，不懂变通'],
+ work:'你适合管理、安保、项目统筹等需要纪律和担当的工作。你是天生的带队人，但别忘了给团队一些温度。',
+ love:'你用责任和保护来表达爱，但对方也需要你的温柔和陪伴。',
+ friend:'朋友觉得你可靠、讲原则，就是偶尔太严肃了。',
+ a:['严格之外，多一点鼓励','试着把关心说出口','偶尔放下规矩，听听别人的想法'],
+ mate:'二郎神。两个靠谱的人，配合起来最省心。',rival:'哪吒。最亲的人，往往最难沟通。'},
+{k:'td',g:'m',camp:'tt',n:'土地公',v:[.5,-.5,1,-.5],tag:'热心肠的老好人，消息最灵通',
+ p:'你热心、和善，是大家眼中的“老好人”。你人缘很好，消息灵通，谁家有什么事你都知道一点。你乐于助人，有人来问路、求助，你总是尽力帮忙。你不求大富大贵，只求平平安安、和和气气。只是有时太好说话，会被人随便使唤。',
+ story:'原著里的土地公是各地管一方土地的小神仙。孙悟空每到一个地方遇到难题，总会先把土地公叫出来问情况。土地公虽然官小，却是取经路上最好用的“情报员”。',
+ s:['热心肠，乐于助人','人缘好，消息灵通','脾气好，很少和人红脸','知足常乐，心态平和'],
+ b:['太好说话，容易被使唤','胆子小，遇事容易慌','不太争取自己的利益'],
+ work:'你适合服务、社区、客服、行政等需要和人打交道的工作。你是团队里的“百事通”。',
+ love:'你是一个温暖顾家的伴侣，会把生活打理得妥妥帖帖。',
+ friend:'朋友有事第一个想到你，你也总是乐呵呵地帮忙。',
+ a:['帮人之前，先照顾好自己','该拒绝的时候就拒绝','你知道的消息很有价值，别随便浪费'],
+ mate:'孙悟空。他一喊你就到，你们是取经路上的老搭档。',rival:'牛魔王。他一发脾气，你就只能躲起来。'},
+{k:'dh',g:'m',camp:'tt',n:'东海龙王',v:[.5,-.5,-.5,-.5],tag:'家大业大，懂得审时度势',
+ p:'你务实、精明，懂得审时度势。你有自己的“家业”和地盘，懂得经营和守护。遇到比你强的人，你懂得退一步，不硬碰硬；遇到机会，你也会算好得失再出手。你爱面子、讲排场，但关键时刻也能放下身段解决问题。',
+ story:'原著里的东海龙王敖广，被孙悟空闯进龙宫，硬要走了定海神针，也就是后来的如意金箍棒，还被讨走了一身披挂。他只好上天庭告状，成了大闹天宫的起因之一。',
+ s:['务实精明，会算账','懂得审时度势','有资源，善于经营','能屈能伸'],
+ b:['有时太怕事，不敢硬碰','爱面子，讲排场','容易吃哑巴亏'],
+ work:'你适合经营、管理、商务、资产运营类工作。你懂得守护家业，也懂得经营人脉。',
+ love:'你对家人大方、有担当，但别把面子看得比感情重要。',
+ friend:'朋友觉得你家底厚、人脉广，有事找你总能想到办法。',
+ a:['该争取的时候，别总是退让','少一点面子，多一点里子','守住你的底线'],
+ mate:'白龙马。龙族的孩子出息了，比什么都强。',rival:'孙悟空。你的宝贝，他张嘴就要。'},
+{k:'zy',g:'m',camp:'tt',n:'镇元大仙',v:[-.5,0,.5,-.5],tag:'讲道理、重情义，惹急了谁都不怕',
+ p:'你有原则、讲道理，重情重义。你待人宽厚，但底线分明，谁要是坏了你的规矩，你一定会讨个说法。你有深厚的实力，却从不张扬。你能和对手不打不相识，最后成为朋友，这是你最难得的胸怀。',
+ story:'原著里的镇元大仙是地仙之祖，住在五庄观，观里有能让人长寿的人参果树。孙悟空推倒了果树，镇元大仙用袖里乾坤把师徒四人一次次抓回来，最后悟空请观音救活了果树，两人还结拜成了兄弟。',
+ s:['讲原则，有底线','重情义，胸怀宽广','实力深厚，从不张扬','能化敌为友'],
+ b:['被冒犯时会很较真','有时太护短','不轻易原谅别人'],
+ work:'你适合需要专业和威望的岗位，比如专家、管理者、教育者。你是能让人信服的那种人。',
+ love:'你重感情，认定了就很长情，但要学会包容对方的小错误。',
+ friend:'你朋友不多，但都是经过考验的真朋友。',
+ a:['原则之外，也要留一点余地','给犯错的人一个弥补的机会','别让一时的气话伤了长久的关系'],
+ mate:'孙悟空。不打不相识，最后成了结拜兄弟。',rival:'猪八戒。偷吃你人参果，他也有份。'},
+{k:'hp',g:'m',camp:'mw',n:'黄袍怪',v:[-.5,.5,1,1],tag:'为爱可以不顾一切的痴情派',
+ p:'你重感情，爱一个人就会全心全意，甚至可以为了对方放弃很多。你有自己的骄傲和脾气，不喜欢被规矩管着。你外表强硬，内心却很深情。你的问题是爱得太用力，有时会让对方喘不过气。',
+ story:'原著里的黄袍怪本是天上的奎木狼星，为了和披香殿的玉女相守，私自下凡做了妖怪。玉女转世成了宝象国的百花羞公主，他便把公主掳到洞中做了妻子，一过就是十三年。',
+ s:['深情专一，敢爱敢为','有实力，有担当','不在乎世俗眼光','对在乎的人非常好'],
+ b:['爱得太用力，容易让对方有压力','脾气大，容易冲动','太自我，不顾规则'],
+ work:'你适合能投入热情、独立负责的工作，比如创业、艺术、技术攻坚。你一旦投入，就会全力以赴。',
+ love:'你是标准的痴情派，但别忘了问问对方想要什么。',
+ friend:'朋友觉得你重情重义，就是有时太固执。',
+ a:['爱要尊重对方的意愿','冲动之前，先想想后果','规矩不全是束缚，有时是保护'],
+ mate:'百花羞。跨越两世的缘分。',rival:'孙悟空。他一来，你十三年的好日子就到头了。'},
+{k:'dp',g:'m',camp:'mw',n:'金翅大鹏',v:[1,1,-1,.5],tag:'心高气傲，速度和实力都是顶配',
+ p:'你心高气傲，能力出众，做事雷厉风行，最讨厌拖泥带水。你相信实力决定一切，对自己要求高，对别人也不太宽容。你有很强的竞争意识，什么都想做到第一。你的锋芒让人佩服，也让人有点怕。',
+ story:'原著里的金翅大鹏雕是狮驼岭三魔之一，一扇翅膀就能飞九万里，比孙悟空的筋斗云还快。连悟空都被他抓住过，最后是如来亲自出面才收服了他。',
+ s:['能力出众，行动极快','竞争意识强，追求第一','果断，执行力强','有气场，有领导力'],
+ b:['太骄傲，容易看不起别人','不太宽容，容易得罪人','太强势，团队压力大'],
+ work:'你适合竞争激烈、讲效率的工作，比如销售、投资、创业、体育竞技。你天生就是冲在最前面的人。',
+ love:'你在感情里也很强势，需要一个能和你并肩、又能包容你骄傲的人。',
+ friend:'朋友佩服你的能力，但也会觉得你有点高冷。',
+ a:['欣赏别人的长处，不只看自己','偶尔放慢速度，等等身边的人','骄傲可以，傲慢不行'],
+ mate:'二郎神。实力派之间的惺惺相惜。',rival:'孙悟空。比速度，你赢过他一回。'},
+{k:'dy',g:'f',camp:'jg',n:'地涌夫人',v:[0,.5,1,1],tag:'认准了就追到底，执着又主动',
+ p:'你执着、主动，喜欢一个人或一件事，就会想尽办法去争取。你有点小机灵，也有点小任性，不太在乎规矩。你很会经营关系，懂得给自己找靠山。你的热情和行动力很可贵，但也要注意方式方法，别让执着变成纠缠。',
+ story:'原著里的地涌夫人是金鼻白毛老鼠精，曾偷吃灵山的香花宝烛，后来认托塔天王为干爹。她在陷空山无底洞里把唐僧抓去要成亲，最后被干爹李靖和哪吒收服。',
+ s:['执着，认准就不放弃','行动力强，主动争取','机灵，会找资源','热情，敢爱敢追'],
+ b:['容易钻牛角尖','不太守规矩','有时太任性，不顾别人感受'],
+ work:'你适合需要主动出击的工作，比如销售、商务拓展、自媒体。你很会抓机会，但要守住底线。',
+ love:'你喜欢就会主动追，但也要学会尊重对方的选择。',
+ friend:'朋友觉得你热情又机灵，就是有时太执着了。',
+ a:['执着之外，也要懂得放手','争取之前，先想想对方愿不愿意','守规矩会让你走得更远'],
+ mate:'玉兔精。两个敢追爱的女孩，一拍即合。',rival:'哪吒。认来的干哥哥，最后亲手来收你。'},
+{k:'js',g:'f',camp:'rj',n:'金圣宫娘娘',v:[-.5,-.5,1,-1],tag:'外柔内刚，越难越坚定',
+ p:'你温柔、端庄，看起来柔弱，内心却非常坚定。你能忍受常人忍不了的委屈，为了在乎的人和事，可以坚持很久很久。你重感情、守承诺，是那种一旦答应就一定做到的人。你的坚韧让人敬佩，只是有时太能忍，委屈了自己。',
+ story:'原著里的金圣宫娘娘是朱紫国的王后，被妖怪赛太岁掳走整整三年。她始终守住自己，也一直想着回国。最后孙悟空降服了妖怪，她终于和国王团聚。',
+ s:['坚韧，能扛住压力','守承诺，值得信赖','温柔端庄，有气质','重感情，对家人忠诚'],
+ b:['太能忍，委屈自己','不太会主动求助','习惯把痛苦藏在心里'],
+ work:'你适合需要耐心和责任心的工作，比如管理、教育、医护、行政。你是团队里最稳的那一个。',
+ love:'你对感情极其忠诚，但也要让对方知道你的需要。',
+ friend:'朋友觉得你温柔可靠，有心事都愿意和你说。',
+ a:['遇到困难，学会开口求助','别总是一个人扛','委屈的时候，也要说出来'],
+ mate:'女儿国国王。同样是一国之主，最懂彼此的担当。',rival:'蝎子精。她太狠，和你的温柔是两个极端。'},
+{k:'gc',g:'f',camp:'rj',n:'高翠兰',v:[0,.5,.5,-.5],tag:'踏实过日子，平凡里有自己的光',
+ p:'你踏实、真诚，不追求轰轰烈烈，只想把日子过好。你顾家、勤快，对家人和朋友都很好。你性格直爽，有什么说什么，不爱绕弯子。你看起来平凡，但你身上有一种让人安心的力量。',
+ story:'原著里的高翠兰是高老庄高太公的三女儿，被猪八戒招为上门女婿。八戒刚开始很勤快，后来露出了猪头猪脑的原形，把高家吓得不轻，直到孙悟空来了才解决这件事。',
+ s:['踏实勤快，靠得住','真诚直爽，不绕弯子','顾家，重视亲情','适应力强，什么苦都能吃'],
+ b:['有时太安于现状','容易被表面印象迷惑','不太会表达自己的想法'],
+ work:'你适合踏实稳定的工作，比如行政、财务、护理、教育。你是团队里最勤快的人。',
+ love:'你想要的是一个踏实过日子的人，不图浪漫，只图安心。',
+ friend:'朋友觉得你真诚好相处，和你在一起很轻松。',
+ a:['偶尔走出舒适区，看看更大的世界','了解一个人，要看他长期怎么做','有想法就大胆说出来'],
+ mate:'七仙女。两个善良的姑娘，最聊得来。',rival:'猪八戒。当年那门亲事，你想起来还后怕。'},
+{k:'bh',g:'f',camp:'rj',n:'百花羞',v:[-.5,-1,.5,.5],tag:'看着柔弱，其实很有主意',
+ p:'你温柔、聪明，看起来柔弱，其实很有主意。你善于在困境中想办法，不会坐以待毙。你重感情，但也有自己的判断，不会被感情冲昏头脑。你懂得用柔和的方式达到目的，是“以柔克刚”的高手。',
+ story:'原著里的百花羞是宝象国的三公主，被黄袍怪掳走做了十三年的妻子。她偷偷放走被抓的唐僧，还托他给父王带信求救，最终在孙悟空的帮助下回到了宝象国。',
+ s:['聪明，善于想办法','外柔内刚，有韧性','懂得以柔克刚','有判断力，不被情绪左右'],
+ b:['有时太委婉，别人听不懂','心里想法多，不爱表达','容易陷在两难里'],
+ work:'你适合需要智慧和沟通技巧的工作，比如公关、人力资源、谈判、策划。你总能找到巧妙的解决办法。',
+ love:'你感情细腻，但也很清醒，知道什么是自己真正想要的。',
+ friend:'朋友觉得你温柔又聪明，是遇到难题时的智囊。',
+ a:['想要什么就直接说出来','别总是一个人想办法，借助别人的力量','两难的时候，跟着内心走'],
+ mate:'金圣宫娘娘。同样经历过磨难，最懂彼此。',rival:'黄袍怪。十三年的纠缠，爱恨难分。'},
+{k:'ls',g:'f',camp:'tt',n:'黎山老母',v:[.5,-1,-.5,-.5],tag:'看人很准的智慧长辈',
+ p:'你睿智、通透，看人看事都很准。你不喜欢直接说教，更喜欢用自己的方式让别人明白道理。你有分寸、有原则，也有幽默感。你对晚辈很关照，但也会适时考验他们，帮助他们成长。',
+ story:'原著里的黎山老母在取经途中，和几位菩萨一起变成母女四人，用富贵和美色考验唐僧师徒的取经决心。结果猪八戒没经住考验，被吊在树上一整夜，这就是“四圣试禅心”的故事。',
+ s:['看人准，有洞察力','睿智通透，懂得引导','有分寸，有原则','有幽默感，不刻板'],
+ b:['有时太爱考验别人','心思深，让人猜不透','对人要求高'],
+ work:'你适合教育、培训、咨询、管理等需要识人和育人的工作。你是天生的导师。',
+ love:'你在感情里很清醒，懂得经营，也懂得考验。',
+ friend:'朋友愿意听你的意见，因为你总能一眼看出问题所在。',
+ a:['少一点考验，多一点直接的鼓励','偶尔把真实想法说出来','给别人犯错的机会'],
+ mate:'七仙女。一个智慧，一个活泼，忘年之交。',rival:'猪八戒。你出的考题，他交了白卷。'},
+{k:'wm',g:'f',camp:'tt',n:'王母娘娘',v:[1,-.5,-.5,-1],tag:'天生的女王，有气场也讲规矩',
+ p:'你有气场、有威严，是天生的组织者和领导者。你重视规矩和秩序，喜欢把一切安排得井井有条。你讲究品位和排场，做事大气。你对自己和别人都有很高的要求，有时显得不好接近，但你的能力和担当让人服气。',
+ story:'原著里的王母娘娘在瑶池举办蟠桃盛会，宴请各路神仙。孙悟空没被邀请，一气之下偷吃了蟠桃、喝光了御酒，把蟠桃会搅得一塌糊涂。',
+ s:['有领导力，能统筹大局','讲规矩，做事有秩序','有品位，大气','有担当，镇得住场面'],
+ b:['太严肃，让人有距离感','对规矩太执着','不太容易听进不同意见'],
+ work:'你适合管理、策划、运营统筹等需要领导力的工作。你是能撑起大场面的人。',
+ love:'你在感情里也有主导欲，需要一个尊重你、也能让你放松的人。',
+ friend:'朋友把你当成主心骨，聚会活动都是你来张罗。',
+ a:['偶尔放下身段，和大家打成一片','规矩之外，也要有人情味','多听听年轻人的想法'],
+ mate:'嫦娥。一个有气场，一个有气质，天庭最美的风景。',rival:'孙悟空。你精心准备的蟠桃会，全被他搅黄了。'},
+{k:'jw',g:'f',camp:'jg',n:'九尾狐',v:[.5,-1,-.5,1],tag:'精明强干，背景硬、手段多',
+ p:'你精明、能干，懂得经营人脉和资源。你看问题很透，善于谋划，知道怎么为自己和家人争取利益。你有很强的保护欲，谁要是动了你在乎的人，你绝不会善罢甘休。你的聪明让人佩服，也让人有点忌惮。',
+ story:'原著里的九尾狐狸住在压龙山压龙洞，被金角大王、银角大王尊称为“老奶奶”。她带着宝贝幌金绳赴宴，却在半路被孙悟空打死，悟空还变成她的样子混进了莲花洞。',
+ s:['精明，会谋划','人脉广，资源多','保护欲强，护着家人','见多识广，经验丰富'],
+ b:['心思太深，让人不敢亲近','有时太看重利益','容易轻敌'],
+ work:'你适合需要谋略和资源整合的工作，比如投资、商务、管理、策划。你很擅长借力打力。',
+ love:'你在感情里很精明，懂得经营，但也要留一点真心。',
+ friend:'朋友觉得你很有办法，有事找你总能搞定。',
+ a:['精明之外，多一点真诚','别轻视任何对手','偶尔放下算计，享受简单的快乐'],
+ mate:'玉面公主。同为狐族，最懂彼此。',rival:'孙悟空。他变成你的样子，骗了你家的晚辈。'},
+{k:'tz',g:'f',camp:'rj',n:'天竺公主',v:[-1,-.5,.5,0],tag:'能屈能伸，困境中也能保护好自己',
+ p:'你安静、坚韧，懂得在困境中保护自己。你不爱出风头，但关键时刻很有智慧，知道什么时候该忍、什么时候该等。你重感情，对家人有很深的牵挂。你的坚韧和耐心，常常让人意想不到。',
+ story:'原著里的天竺国公主被玉兔精抛到荒野，流落到布金寺。为了保护自己，她假装疯癫，白天说胡话，夜里偷偷思念父母，一等就是一年。直到唐僧师徒路过，她才得以回宫和家人团聚。',
+ s:['坚韧，能熬过困境','有智慧，懂得保护自己','有耐心，沉得住气','重感情，心中有牵挂'],
+ b:['太安静，容易被忽视','不太会主动求助','习惯独自承受'],
+ work:'你适合需要耐心和专注的工作，比如研究、写作、设计、技术。你能在长期的坚持中做出成绩。',
+ love:'你感情深沉，一旦认定就很专一。你需要一个能看懂你沉默的人。',
+ friend:'朋友觉得你安静可靠，是可以长久相处的人。',
+ a:['遇到困难，主动向身边的人求助','多表达你的想法和需要','相信自己，你比想象中更强大'],
+ mate:'嫦娥。她最懂安静的力量。',rival:'玉兔精。她冒充了你整整一年。'},
+{k:'ln',g:'f',camp:'tt',n:'龙女',v:[.5,.5,.5,-.5],tag:'机灵乖巧，是大家的贴心小帮手',
+ p:'你机灵、乖巧，反应快，做事利落，是大家都喜欢的小帮手。你热心助人，总能第一时间注意到别人需要什么。你守规矩、懂礼貌，长辈们特别喜欢你。你需要注意的是，别总是只做配角，也要勇敢地站到前面来。',
+ story:'原著里的龙女是常伴观音身边的小龙女，手捧明珠，聪明伶俐。取经路上，她常随观音出现，帮忙降妖除魔，是团队里不可缺少的小助手。',
+ s:['机灵，反应快','热心，乐于助人','有礼貌，讨人喜欢','做事利落，执行力强'],
+ b:['习惯做配角，不敢出风头','太在意别人的评价','有时太听话，缺少主见'],
+ work:'你适合需要协作和执行的工作，比如助理、运营、客服、活动执行。你是团队里最靠谱的帮手。',
+ love:'你在感情里贴心又可爱，但别忘了表达自己的想法。',
+ friend:'朋友觉得你可爱又靠谱，是最好的小伙伴。',
+ a:['勇敢一点，争取站到台前','有自己的想法就大胆说','不必事事都让别人满意'],
+ mate:'七仙女。两个乖巧的女孩，最有话聊。',rival:'万圣公主。同为龙族，一个乖巧，一个叛逆。'},
+{k:'wq',g:'f',camp:'jg',n:'万圣公主',v:[.5,1,-.5,1],tag:'胆大包天，想要什么就去拿',
+ p:'你胆子大、敢冒险，想要什么就会主动去争取，不太在乎规矩和后果。你行动力极强，说干就干，很少犹豫。你有自己的主见，不喜欢被人安排。你的勇气让人佩服，但也常常让你陷入麻烦。',
+ story:'原著里的万圣公主是碧波潭万圣龙王的女儿，招了九头虫做驸马。她胆大包天，偷了王母娘娘的九叶灵芝草，又和驸马一起偷走了祭赛国金光寺的佛宝，最后被孙悟空和猪八戒找上门来。',
+ s:['胆子大，敢冒险','行动力极强','有主见，不随波逐流','敢想敢做，不怕失败'],
+ b:['不顾后果，容易惹麻烦','太不守规矩','有时太冲动，考虑不周'],
+ work:'你适合充满挑战的工作，比如创业、销售、户外、新媒体。你敢闯敢拼，但要做好风险控制。',
+ love:'你在感情里很主动，想要就去追，但要选对人。',
+ friend:'朋友觉得你很酷、很敢，跟你在一起总有刺激的事。',
+ a:['冒险之前，想想最坏的结果','规矩有时是在保护你','胆大的同时，也要心细'],
+ mate:'蜘蛛精。两个敢闯的姑娘，一起闹翻天。',rival:'龙女。同为龙族，一个乖巧，一个叛逆。'},
+{k:'yw',g:'f',camp:'rj',n:'殷温娇',v:[0,-1,1,0],tag:'隐忍坚强，为了在乎的人可以等很久',
+ p:'你温柔、聪慧，内心非常坚强。你懂得隐忍，也懂得等待，能为了在乎的人和事默默坚持很多年。你做事深思熟虑，不会冲动行事。你看起来温婉，其实心里有一股不服输的力量。',
+ story:'原著里的殷温娇是唐僧的母亲，丞相之女，抛绣球嫁给了状元陈光蕊。陈光蕊上任途中被害，她忍辱负重，把刚出生的儿子放在木板上随江漂走，十八年后母子终于相认，为夫报了仇。',
+ s:['坚强，能忍常人所不能忍','深思熟虑，不冲动','重感情，对家人无私','聪慧，有谋略'],
+ b:['太能忍，委屈自己','心事重，不爱表达','容易背负太多压力'],
+ work:'你适合需要耐心和谋划的工作，比如管理、法务、财务、规划。你能在长期中看到结果。',
+ love:'你对爱人和孩子付出很多，但也要记得照顾好自己。',
+ friend:'朋友觉得你温柔又坚强，是最值得信赖的人。',
+ a:['别把所有压力都扛在自己身上','难过的时候，找人说说','你的人生也值得被好好对待'],
+ mate:'唐僧。母子连心，十八年后终于相认。',rival:'白骨精。你最怕有人打你孩子的主意。'},
+{k:'mh',g:'f',camp:'jg',n:'比丘国美后',v:[1,-.5,-1,.5],tag:'魅力十足，最懂得借势而上',
+ p:'你有魅力，也懂得展示自己的魅力。你聪明、会社交，善于借助别人的力量达成自己的目标。你懂得察言观色，知道别人想要什么。你的魅力和手腕让你在很多场合游刃有余，但也要小心，别让手段掩盖了真诚。',
+ story:'原著里的比丘国美后是一只白面狐狸，被白鹿精当作女儿献给比丘国王。国王被她迷得神魂颠倒，身体越来越差，白鹿精还骗国王用小孩的心肝做药引，最后被孙悟空识破。',
+ s:['有魅力，懂得展示自己','会社交，善于借势','察言观色，懂人心','聪明，有手腕'],
+ b:['太依赖手段，缺少真诚','容易被背后的人利用','太在意外表和评价'],
+ work:'你适合需要魅力和社交的工作，比如公关、主播、品牌、商务。你天生会吸引别人的注意。',
+ love:'你很会吸引人，但真正的感情需要真心经营。',
+ friend:'朋友觉得你漂亮又会说话，是聚会里的焦点。',
+ a:['魅力之外，多一点真诚','培养自己的真本事，别只靠借势','远离想利用你的人'],
+ mate:'玉面公主。同为狐族，最懂彼此。',rival:'孙悟空。你的伪装，在他面前一秒就露馅。'}
+);
+/* ---------- 西游测试：新增题目 ---------- */
+XY_QS.push(
+ ['你的手机里最多的是？',[['聊天群和朋友的照片',[1,0,0,0]],['学习资料和收藏的文章',[-.5,-1,0,0]],['游戏和运动软件',[0,1,0,0]],['和家人的聊天记录',[0,0,1,0]]]],
+ ['排队时前面有人插队，你会？',[['直接让他排到后面去',[0,1,0,-.5]],['算了，不差这几分钟',[0,-.5,.5,0]],['和后面的人一起吐槽',[1,0,0,0]],['默默记下，下次不来了',[-1,0,0,0]]]],
+ ['放长假了，你最想？',[['和朋友出去浪',[1,0,0,.5]],['回家陪家人',[0,0,1,-.5]],['学一门新本事',[0,-1,0,0]],['一个人去旅行',[-1,0,0,.5]]]],
+ ['你觉得规矩和人情，哪个更重要？',[['规矩',[0,0,-.5,-1]],['人情',[0,0,1,0]],['看情况',[0,-.5,0,0]],['我自己说了算',[0,0,0,1]]]],
+ ['做小组作业时，你通常？',[['当组长，分配任务',[.5,.5,0,-.5]],['默默把最难的部分做完',[-1,.5,0,0]],['出主意、想点子',[0,-1,0,.5]],['负责活跃气氛',[1,0,.5,0]]]],
+ ['别人向你倾诉烦恼，你更擅长？',[['直接给出解决办法',[0,.5,-1,0]],['陪着他一起难过',[0,0,1,0]],['讲个笑话逗他开心',[1,0,0,0]],['安安静静地听',[-1,0,0,0]]]],
+ ['你最不能忍受被人说？',[['胆小',[0,1,0,0]],['没脑子',[0,-1,-.5,0]],['冷漠',[0,0,1,0]],['没规矩',[0,0,0,-1]]]],
+ ['买东西的时候，你通常？',[['看中就买',[0,1,0,.5]],['货比三家',[0,-1,0,0]],['听朋友推荐',[1,0,0,0]],['买自己用惯的牌子',[0,0,0,-1]]]],
+ ['你觉得自己更像？',[['太阳，热烈耀眼',[1,.5,0,0]],['月亮，安静温柔',[-1,0,.5,0]],['闪电，又快又狠',[0,1,-.5,0]],['星星，自由闪烁',[0,0,0,1]]]],
+ ['被人冤枉了，你会？',[['当场据理力争',[.5,1,0,0]],['拿出证据，冷静证明',[0,-1,-1,0]],['委屈得想哭',[0,0,1,0]],['无所谓，懒得解释',[-1,0,0,.5]]]],
+ ['你更愿意当哪种角色？',[['冲锋陷阵的将军',[0,1,0,0]],['运筹帷幄的军师',[0,-1,0,0]],['照顾大家的后勤',[0,0,1,-.5]],['独来独往的侠客',[-1,0,0,1]]]],
+ ['理想的周末晚上是？',[['一群人去唱歌',[1,0,0,0]],['窝在家里看剧',[-1,0,0,0]],['去做点刺激的事',[0,1,0,.5]],['和喜欢的人散散步',[0,0,1,0]]]]
+);
+
+const XY_CAL={"sd":[3.171,3.575,4.279,2.926],"proto":{"wk":[4.173,5.303,0.63,3.188],"ts":[-0.413,-2.849,3.448,-4.588],"bj":[5.505,0.522,4.08,0.053],"ss":[-4.028,-2.243,1.591,-4.838],"bl":[-4.943,1.873,0.557,-2.019],"el":[-4.869,-3.647,-2.103,-0.288],"nz":[0.068,5.592,1.287,4.23],"tb":[1.475,-3.025,1.722,-5.004],"nm":[5.205,2.191,3.384,1.637],"hh":[1.687,5.974,-1.03,3.381],"jj":[4.221,-3.322,-1.408,1.528],"yj":[-2.628,3.49,-1.528,4.743],"hf":[-3.579,4.38,-0.348,4.45],"hx":[-4.237,-3.787,0.079,-0.256],"le":[-4.659,-0.305,-1.644,4.128],"tl":[-2.38,-4.877,-1.613,-4.728],"tw":[0.805,2.292,-0.809,-5.272],"td":[2.472,-1.113,4.434,-2.669],"dh":[2.825,-3.243,-1.774,-4.009],"zy":[-2.979,-0.324,2.903,-3.522],"hp":[-2.389,2.525,3.013,4.501],"dp":[3.73,5.531,-0.843,2.047],"bg":[-3.357,-3.952,-2.113,3.207],"nr":[-0.361,-2.741,3.514,-4.647],"tf":[4.746,3.111,2.71,-0.991],"ce":[-4.468,-2.91,0.044,-4.933],"qx":[4.329,0.225,3.382,-3.592],"zz":[5.744,1.343,0.879,3.336],"yt":[2.322,5.644,1.232,3.712],"xz":[-3.154,4.707,-1.284,3.228],"xx":[3.163,-0.884,4.513,1.508],"ym":[3.875,-1.477,3.263,-0.324],"dy":[-0.07,2.776,3.391,4.248],"js":[-1.742,-1.75,3.554,-4.699],"gc":[0.724,2.755,2.788,-2.952],"bh":[-3.56,-3.861,1.61,1.836],"ls":[1.745,-4.78,-1.893,-3.441],"wm":[4.087,-2.084,-1.211,-4.752],"jw":[1.987,-3.728,-1.606,3.166],"tz":[-5.484,-2.288,1.842,0.399],"ln":[3.818,2.559,2.463,-2.578],"wq":[1.978,6.055,-0.404,3.604],"yw":[-0.444,-3.212,4.209,-0.685],"mh":[4.605,-2.12,-1.899,1.857]},"bias":{"wk":-0.708,"ts":0.105,"bj":0.208,"ss":-0.6,"bl":0.822,"el":-0.617,"nz":-0.364,"tb":0.183,"nm":0.291,"hh":-0.615,"jj":0.593,"yj":-0.398,"hf":-0.813,"hx":0.372,"le":-0.341,"tl":-1.415,"tw":0.894,"td":1.119,"dh":0.062,"zy":1.143,"hp":0.447,"dp":-0.366,"bg":-0.784,"nr":-0.239,"tf":0.223,"ce":-1.15,"qx":-0.18,"zz":-0.552,"yt":-0.63,"xz":-0.091,"xx":0.599,"ym":0.905,"dy":0.749,"js":-0.071,"gc":1.854,"bh":0.176,"ls":-0.74,"wm":-0.736,"jw":0.03,"tz":0.007,"ln":0.709,"wq":-0.826,"yw":0.843,"mh":-0.097}};
 
 /* ---------- 付费测试：题目、类型、报告 ---------- */
 const LIKERT=[['非常符合',2],['比较符合',1],['说不清',0],['不太符合',-1],['很不符合',-2]];
@@ -924,20 +1264,22 @@ const PAID_TESTS=[
 ];
 
 /* ---------- 应用逻辑 ---------- */
-const XY_TEST={id:'xiyou',name:'你是西游记里的谁',sub:'24个西游角色，附专属角色头像',c:'#d9782b',price:0};
+const XY_TEST={id:'xiyou',name:'你是西游记里的谁',sub:'44个西游角色，男女各22个，附专属角色头像',c:'#d9782b',price:0};
 const ALL=[XY_TEST,...PAID_TESTS];
-const BUNDLE=2.99,PASS_DAYS=3,ADS_NEEDED=5;
+const BUNDLE=1.99,PASS_DAYS=3,ADS_NEEDED=5;
 const XY_BY={};XY.forEach(c=>XY_BY[c.k]=c);
 const byName=s=>{const nm=s.split('。')[0];return XY.find(c=>c.n===nm)};
-const av=(k,cls='av')=>`<span class="${cls}">${LP.draw(k,XY_BY[k].camp)}</span>`;
+const AV_URL={};
+const avUrl=k=>{if(!AV_URL[k]){const svg=LP.draw(k,XY_BY[k].camp);try{AV_URL[k]=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml'}))}catch(e){AV_URL[k]='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg)}}return AV_URL[k]};
+const av=(k,cls='av')=>`<span class="${cls}"><img src="${avUrl(k)}" alt="${XY_BY[k].n}"></span>`;
 
 const store={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
 let unlocked=new Set(store.get('xcj_paid',[])),adCount=store.get('xcj_ads',{}),passUntil=store.get('xcj_pass',0),seen=new Set(store.get('xcj_seen',[]));
 const passActive=()=>Date.now()<passUntil;
 const isOpen=t=>t.price===0||unlocked.has(t.id)||passActive();
 const fmtTime=ms=>{const d=new Date(ms);const p=n=>String(n).padStart(2,'0');return `${d.getMonth()+1}月${d.getDate()}日 ${p(d.getHours())}:${p(d.getMinutes())}`};
-const priceTag=t=>t.price===0?'<span class="tag adt">看广告免费</span>':isOpen(t)?'<span class="tag open">已解锁</span>':`<span class="tag">${t.price}元</span>`;
-const glyphOf=t=>t.id==='xiyou'?`<span class="glyph">${LP.draw('wk','qj')}</span>`:`<span class="glyph">${t.glyph}</span>`;
+const priceTag=t=>t.price>0&&isOpen(t)?'<span class="tag open">已解锁</span>':'';
+const glyphOf=t=>t.id==='xiyou'?`<span class="glyph"><img src="${avUrl('wk')}" alt=""></span>`:`<span class="glyph">${t.glyph}</span>`;
 const qCount=t=>t.id==='xiyou'?XY_QS.length:t.items.length;
 
 const app=document.getElementById('app'),ov=document.getElementById('ov');
@@ -947,15 +1289,22 @@ const on=(id,f)=>{const e=$(id);if(e)e.onclick=f};
 
 function home(){
   Q=null;last=null;app.style.removeProperty('--c');
+  const paid=PAID_TESTS;
   app.innerHTML=`
-  <div class="top"><h1>小测<span>局</span></h1><p>5个小测试，测完更懂自己</p></div>
-  ${passActive()?`<div class="bundle done"><div><b>全部解锁中</b><small>有效期至 ${fmtTime(passUntil)}，所有报告随便看</small></div></div>`:
-  `<div class="bundle"><div><b>全部解锁 ${BUNDLE}元</b><small>${PASS_DAYS}天内4个付费测试的完整报告随便看</small></div><button type="button" id="bAll">去解锁</button></div>`}
-  <div class="cards">${ALL.map(t=>`
+  <div class="top"><h1>小测<span>局</span></h1><p>测完更懂自己</p></div>
+  <button class="heroCard" type="button" id="goXY">
+    <span class="heroAvs">${['wk','bg','bj','ce','nz'].map(k=>av(k)).join('')}</span>
+    <span class="heroTxt"><b>你是西游记里的谁</b><small>44个西游角色，男女各22个，测出你的专属角色和头像</small></span>
+    <span class="heroGo">开始测试 →</span>
+  </button>
+  <div class="cards">${paid.map(t=>`
     <button class="card" type="button" data-id="${t.id}" style="--c:${t.c}">${glyphOf(t)}
       <span class="txt"><h3>${t.name}</h3><p>${t.sub} · ${qCount(t)}题</p></span>${priceTag(t)}
     </button>`).join('')}</div>
-  <p class="foot">做题和查看类型都免费。付费报告可以付款解锁，也可以看${ADS_NEEDED}个广告免费解锁。<br>测试结果仅供娱乐参考。</p>`;
+  ${passActive()?`<div class="strip on">全部解锁中 · 有效期至 ${fmtTime(passUntil)}</div>`:
+  `<button class="strip" type="button" id="bAll"><span>全部解锁 <b>${BUNDLE}元</b> · ${PASS_DAYS}天内4份深度报告随便看</span><span class="arrow">›</span></button>`}
+  <p class="foot">测试结果仅供娱乐参考</p>`;
+  on('goXY',()=>start(XY_TEST));
   app.querySelectorAll('.card').forEach(b=>b.onclick=()=>start(ALL.find(t=>t.id===b.dataset.id)));
   on('bAll',()=>pay(null));
   scrollTo(0,0);
@@ -980,10 +1329,13 @@ function gender(){
 }
 function xyCompute(g,ans){
   const sum=[0,0,0,0];ans.forEach(v=>v.forEach((x,j)=>sum[j]+=x));
-  const u=sum.map(x=>Math.max(-1,Math.min(1,x/XY_DIV)));
-  const ranked=XY.filter(c=>c.g===g).map(c=>{const d=Math.sqrt(c.v.reduce((s,x,j)=>s+(x-u[j])**2,0));return {k:c.k,d,s:d+(XY_BIAS[c.k]||0),m:Math.max(62,Math.min(98,Math.round(99-d*11)))}}).sort((a,b)=>a.s-b.s);
-  const dims=sum.map(x=>Math.round(Math.max(3,Math.min(97,50+50*x/XY_DIV/1.6))));
-  return {ranked,dims};
+  const u=sum.map((x,j)=>x/XY_CAL.sd[j]);
+  const r=XY.filter(c=>c.g===g).map(c=>{const p=XY_CAL.proto[c.k];const d=Math.sqrt(p.reduce((a,x,j)=>a+(x-u[j])**2,0));return {k:c.k,s:d+(XY_CAL.bias[c.k]||0)}}).sort((a,b)=>a.s-b.s);
+  // 契合度：第一名明显最高，其余依次递减，至少低7个百分点
+  r[0].m=Math.max(86,Math.min(98,Math.round(86+(r[1].s-r[0].s)*12)));
+  for(let i=1;i<r.length;i++){let m=Math.round(r[0].m-7-(r[i].s-r[1].s)*10-(i-1)*2);m=Math.min(m,r[i-1].m-(i===1?7:2));r[i].m=Math.max(35,m)}
+  const dims=u.map(x=>Math.round(Math.max(4,Math.min(96,50+50*Math.max(-1,Math.min(1,x/2.2))))));
+  return {ranked:r,dims};
 }
 function xyGate(){
   const r=xyCompute(Q.g,Q.ans);last={kind:'xy',g:Q.g,...r};
@@ -1037,7 +1389,7 @@ function quiz(){
   app.innerHTML=`
   <div class="qbar"><button class="back" type="button" id="back">‹ ${i?'上一题':'返回'}</button><div class="prog"><i style="width:${i/total*100}%"></i></div><span class="count">${i+1} / ${total}</span></div>
   <div class="qtitle">${t.name}${xy?'':' · 凭第一感觉选'}</div>${body}
-  ${i===0?(xy?'<p class="priceNote">做完题看一段广告，即可查看你的角色和完整报告</p>':isOpen(t)?'':`<p class="priceNote">查看你的类型免费；完整报告${t.price}元，或看${ADS_NEEDED}个广告解锁</p>`):''}`;
+`;
   on('back',()=>{if(Q.i===0)return xy?gender():home();Q.i--;Q.ans.pop();quiz()});
   app.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{
     const k=+b.dataset.k;Q.ans.push(xy?XY_QS[i][1][k][1]:LIKERT[k][1]);
@@ -1119,6 +1471,5 @@ ov.onclick=e=>{if(e.target===ov&&ov.querySelector('.plan'))ov.hidden=true};
 home();
 
 </script>
-
 </body>
 </html>
