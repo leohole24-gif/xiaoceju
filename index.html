@@ -1,0 +1,1124 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>小测局</title>
+<style>
+/* Layout: single-column phone app — test shelf → one question per screen → result: portrait/type header, long report (free or locked), screenshot share card */
+:root{
+  --bg:#f2f3f8; --surface:#ffffff; --ink:#1d2033; --muted:#6a6f86; --line:#e1e3ee; --soft:#e9ebf4;
+  --brand:#ff5a3c; --ok:#1f9d6b; --ad:#f0a020;
+  --display:"PingFang SC","Microsoft YaHei","Noto Sans SC",sans-serif;
+  --body:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Helvetica Neue",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14151d;--surface:#1f2130;--ink:#eceef7;--muted:#9aa0b8;--line:#2f3246;--soft:#282b3c;--brand:#ff7559;--ok:#3cc28d;--ad:#f5b13c;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#14151d;--surface:#1f2130;--ink:#eceef7;--muted:#9aa0b8;--line:#2f3246;--soft:#282b3c;--brand:#ff7559;--ok:#3cc28d;--ad:#f5b13c;color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.65;-webkit-tap-highlight-color:transparent}
+.wrap{max-width:480px;margin:0 auto;box-sizing:border-box;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 40px;display:flex;flex-direction:column;gap:14px}
+h1,h2,h3{font-family:var(--display);font-weight:800;margin:0;text-wrap:balance;letter-spacing:.5px}
+button{font-family:inherit;color:inherit}
+button:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+.top h1{font-size:40px;line-height:1.1}
+.top h1 span{color:var(--brand)}
+.top p{margin:4px 0 0;color:var(--muted)}
+.bundle{display:flex;align-items:center;gap:12px;background:var(--ink);color:var(--bg);border-radius:16px;padding:14px 16px}
+.bundle div{flex:1;min-width:0}
+.bundle b{font-family:var(--display);font-weight:400;font-size:20px;display:block}
+.bundle small{opacity:.75;font-size:12px}
+.bundle button,.cta{border:0;border-radius:999px;background:var(--brand);color:#fff;font-weight:600;font-size:15px;padding:10px 16px;cursor:pointer;white-space:nowrap}
+.bundle.done{background:var(--soft);color:var(--ink)}
+.cards{display:flex;flex-direction:column;gap:10px}
+.card{display:flex;gap:14px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px;text-align:left;cursor:pointer;width:100%}
+.card:active{transform:scale(.99)}
+.glyph{flex:none;width:54px;height:54px;border-radius:14px;background:var(--c);color:#fff;font-family:var(--display);font-size:30px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.glyph svg,.av svg{width:100%;height:100%;display:block}
+.card .txt{flex:1;min-width:0}
+.card h3{font-size:20px}
+.card p{margin:0;color:var(--muted);font-size:13px;line-height:1.5}
+.tag{flex:none;font-size:12px;font-weight:600;border-radius:999px;padding:3px 10px;background:var(--soft);color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap}
+.tag.adt{background:var(--ad);color:#fff}
+.tag.open{background:transparent;border:1px solid var(--ok);color:var(--ok)}
+.foot{color:var(--muted);font-size:12px;text-align:center;line-height:1.6}
+/* gender */
+.gender{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.gbtn{border:2px solid var(--line);background:var(--surface);border-radius:18px;padding:18px 10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;font-family:var(--display);font-size:24px}
+.gbtn:hover{border-color:var(--c)}
+.gbtn .av{width:100px;height:100px}
+.gbtn small{font-family:var(--body);font-size:12px;color:var(--muted)}
+/* quiz */
+.qbar{display:flex;align-items:center;gap:12px}
+.back{border:0;background:none;color:var(--muted);font-size:15px;cursor:pointer;padding:6px 0;white-space:nowrap}
+.prog{flex:1;height:8px;border-radius:99px;background:var(--soft);overflow:hidden}
+.prog i{display:block;height:100%;background:var(--c);border-radius:99px;transition:width .25s}
+.count{font-variant-numeric:tabular-nums;color:var(--muted);font-size:13px}
+.qtitle{font-size:13px;color:var(--c);font-weight:600}
+.q{font-size:26px;line-height:1.35}
+.opts{display:flex;flex-direction:column;gap:10px;margin-top:6px}
+.opt{border:1.5px solid var(--line);background:var(--surface);border-radius:14px;padding:15px 16px;text-align:left;font-size:16px;cursor:pointer;transition:border-color .15s,background .15s}
+.opt:hover{border-color:var(--c)}
+.opt:active{background:var(--soft)}
+.likert .opt{display:flex;align-items:center;gap:12px;padding:13px 16px}
+.likert .opt i{flex:none;border-radius:50%;border:2px solid var(--c);box-sizing:border-box}
+.priceNote{font-size:12px;color:var(--muted);text-align:center;margin:0}
+/* result */
+.hero{background:var(--c);color:#fff;border-radius:20px;padding:20px 18px 22px;display:flex;flex-direction:column;gap:4px}
+.hero.withav{align-items:center;text-align:center}
+.hero .av{width:170px;height:170px;border-radius:50%;border:5px solid rgba(255,255,255,.85);margin-bottom:6px;overflow:hidden}
+.hero small{opacity:.88;font-size:13px}
+.hero h2{font-size:44px;line-height:1.15}
+.hero p{margin:0;font-size:16px}
+.pills{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.pill{display:inline-block;background:rgba(255,255,255,.22);border-radius:999px;padding:2px 12px;font-size:13px;font-variant-numeric:tabular-nums}
+.free{background:rgba(255,255,255,.18);border-radius:12px;padding:8px 12px;margin-top:8px;font-size:14px}
+.sec{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px 16px;display:flex;flex-direction:column;gap:12px;position:relative;overflow:hidden}
+.sec .body{display:flex;flex-direction:column;gap:20px}
+.sec h3{font-size:22px}
+.sec p{margin:0}
+.sec ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px}
+.blk{display:flex;flex-direction:column;gap:8px}
+.lbl{font-size:13px;font-weight:700;letter-spacing:1px;color:var(--c)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips span{background:var(--soft);border-radius:999px;padding:4px 12px;font-size:13px}
+.bars{display:flex;flex-direction:column;gap:8px}
+.bar{display:grid;grid-template-columns:6.2em 1fr 3em;align-items:center;gap:8px;font-size:13px}
+.bar .t{height:10px;border-radius:99px;background:var(--soft);overflow:hidden}
+.bar .t i{display:block;height:100%;background:var(--c);border-radius:99px}
+.bar .n{text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)}
+.duos{display:flex;flex-direction:column;gap:14px}
+.duo .ends{display:flex;justify-content:space-between;font-size:13px;font-weight:600}
+.duo .ends.n{font-weight:400;color:var(--muted);font-variant-numeric:tabular-nums;font-size:12px}
+.duo .track{position:relative;height:10px;border-radius:99px;background:linear-gradient(90deg,var(--c),var(--soft));margin:4px 0}
+.duo .track i{position:absolute;top:50%;width:18px;height:18px;border-radius:50%;background:var(--surface);border:3px solid var(--c);transform:translate(-50%,-50%);box-sizing:border-box}
+.pair{margin:0}
+.pair b{display:block;font-size:14px}
+.duo-chars{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mini{display:flex;gap:10px;align-items:center;background:var(--soft);border-radius:12px;padding:10px}
+.mini .av{flex:none;width:52px;height:52px;border-radius:50%;overflow:hidden}
+.mini div{min-width:0;font-size:13px;line-height:1.5}
+.mini b{display:block;font-size:14px}
+.shadows{display:flex;gap:14px;flex-wrap:wrap}
+.shadows div{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:13px;width:72px;text-align:center}
+.shadows .av{width:60px;height:60px;border-radius:50%;overflow:hidden}
+.dex{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.dex div{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;text-align:center;line-height:1.3}
+.dex .av{width:100%;aspect-ratio:1;max-width:100%;border-radius:50%;overflow:hidden}
+.dex .off .av{filter:grayscale(1) brightness(.9);opacity:.45}
+.dex .me .av{outline:3px solid var(--c);outline-offset:2px}
+.locked .body{filter:blur(7px);user-select:none;pointer-events:none;max-height:900px;overflow:hidden}
+.lock{position:absolute;inset:0;display:flex;align-items:flex-start;justify-content:center;padding:40px 16px 16px}
+.lock>div{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px 16px;text-align:center;max-width:320px;width:100%;display:flex;flex-direction:column;gap:10px;box-shadow:0 10px 30px rgba(0,0,0,.14)}
+.lock b{font-family:var(--display);font-weight:400;font-size:22px}
+.lock ul{text-align:left;margin:0;padding-left:20px;font-size:14px;color:var(--muted)}
+.ghost{border:1.5px solid var(--line);background:none;border-radius:999px;padding:9px 14px;font-size:14px;cursor:pointer}
+.adbtn{border:0;border-radius:999px;background:var(--ad);color:#fff;font-weight:600;font-size:15px;padding:10px 16px;cursor:pointer}
+.gate{display:flex;flex-direction:column;align-items:center;text-align:center;gap:14px;padding-top:20px}
+.gate .av{width:180px;height:180px;border-radius:50%;overflow:hidden;filter:blur(14px) grayscale(.4);opacity:.85}
+.gate h2{font-size:30px}
+.gate p{margin:0;color:var(--muted)}
+.gate .adbtn{font-size:18px;padding:14px 26px}
+.share{border:2px dashed var(--line);border-radius:18px;padding:18px;text-align:center;display:flex;flex-direction:column;gap:6px;align-items:center}
+.share .av{width:120px;height:120px;border-radius:50%;overflow:hidden}
+.share .glyph{width:64px;height:64px;font-size:36px}
+.share h3{font-size:30px;color:var(--c)}
+.share small{color:var(--muted);font-size:12px}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.row button{flex:1;min-width:130px;border-radius:999px;padding:12px;font-size:15px;cursor:pointer;border:1.5px solid var(--line);background:var(--surface)}
+.row .pri{background:var(--c);border-color:var(--c);color:#fff;font-weight:600}
+.more{display:flex;flex-direction:column;gap:8px}
+/* sheets */
+.ov{position:fixed;inset:0;background:rgba(10,12,24,.55);display:flex;align-items:flex-end;justify-content:center;z-index:50}
+.sheet{background:var(--surface);width:100%;max-width:480px;border-radius:22px 22px 0 0;box-sizing:border-box;padding:20px max(16px,env(safe-area-inset-right,0px)) calc(20px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:12px}
+.sheet h3{font-size:24px}
+.plan{display:flex;justify-content:space-between;align-items:center;gap:10px;border:2px solid var(--line);border-radius:14px;padding:14px;cursor:pointer;background:none;text-align:left;width:100%;font-size:15px}
+.plan.sel{border-color:var(--brand)}
+.plan b{font-size:18px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.plan small{display:block;color:var(--muted);font-size:12px}
+.demo{font-size:12px;color:var(--brand);text-align:center;margin:0}
+.paybtn{border:0;border-radius:999px;background:var(--ok);color:#fff;font-size:17px;font-weight:600;padding:14px;cursor:pointer}
+.paybtn.ad{background:var(--ad)}
+.paybtn[disabled]{opacity:.7}
+.adplay{display:flex;flex-direction:column;align-items:center;gap:8px;padding:10px 0}
+.adplay .num{font-family:var(--display);font-size:64px;line-height:1;color:var(--ad);font-variant-numeric:tabular-nums}
+.adplay p{margin:0;color:var(--muted);text-align:center;font-size:13px}
+.dots{display:flex;gap:6px;justify-content:center}
+.dots i{width:22px;height:6px;border-radius:9px;background:var(--soft)}
+.dots i.on{background:var(--ad)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<style>html{-webkit-text-size-adjust:100%}body{margin:0}img{max-width:100%}[hidden]{display:none!important}h1,h2,h3,.bundle b,.lock b,.count,.adplay .num,.glyph,.gbtn{font-weight:800}</style>
+</head>
+<body>
+
+
+<div class="wrap" id="app"></div>
+<div class="ov" id="ov" hidden></div>
+
+<script>
+/* ---------- 几何切面风格头像（代码绘制） ---------- */
+const LP=(()=>{
+  const INK='#2a2230';
+  const rgb=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
+  const tone=(h,f)=>{const c=rgb(h).map(v=>Math.round(Math.max(0,Math.min(255,f>=1?v+(255-v)*(f-1):v*f))));return `rgb(${c[0]},${c[1]},${c[2]})`};
+  let seed=7;const rnd=()=>{seed=(seed*16807)%2147483647;return seed/2147483647};
+  const LX=-0.55,LY=-0.83;
+  const f1=n=>n.toFixed(1);
+  const tri=(a,b,c,fill)=>`<path d="M${f1(a[0])} ${f1(a[1])}L${f1(b[0])} ${f1(b[1])}L${f1(c[0])} ${f1(c[1])}Z" fill="${fill}" stroke="${fill}" stroke-width=".7" stroke-linejoin="round"/>`;
+  function facet(pts,col,k){
+    const n=pts.length;const cx=pts.reduce((s,p)=>s+p[0],0)/n,cy=pts.reduce((s,p)=>s+p[1],0)/n;
+    const inn=pts.map(p=>[cx+(p[0]-cx)*.52,cy+(p[1]-cy)*.52]);
+    let o='';
+    const sh=(a,b,c,kk)=>{const tx=(a[0]+b[0]+c[0])/3-cx,ty=(a[1]+b[1]+c[1])/3-cy;const l=Math.hypot(tx,ty)||1;const d=tx/l*LX+ty/l*LY;return tone(col,1+kk*d+(rnd()-.5)*.08)};
+    for(let i=0;i<n;i++){const j=(i+1)%n;o+=tri(pts[i],pts[j],inn[j],sh(pts[i],pts[j],inn[j],k));o+=tri(pts[i],inn[j],inn[i],sh(pts[i],inn[j],inn[i],k*.75))}
+    for(let i=0;i<n;i++){const j=(i+1)%n;const c=[cx,cy];o+=tri(c,inn[i],inn[j],sh(c,inn[i],inn[j],k*.35))}
+    return o;
+  }
+  const flat=(pts,col,op=1)=>`<path d="M${pts.map(p=>f1(p[0])+' '+f1(p[1])).join('L')}Z" fill="${col}"${op<1?` opacity="${op}"`:''}/>`;
+  const line=(d,col,w,op=1)=>`<path d="${d}" fill="none" stroke="${col}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"${op<1?` opacity="${op}"`:''}/>`;
+  // 几何工具
+  const poly=(cx,cy,r,n=6,rot=0,sx=1,sy=1)=>Array.from({length:n},(_,i)=>{const a=rot*Math.PI/180+i*2*Math.PI/n;return [cx+Math.cos(a)*r*sx,cy+Math.sin(a)*r*sy]});
+  const mir=pts=>pts.map(([x,y])=>[200-x,y]);
+  const rot=(pts,cx,cy,deg)=>{const a=deg*Math.PI/180,c=Math.cos(a),s=Math.sin(a);return pts.map(([x,y])=>[cx+(x-cx)*c-(y-cy)*s,cy+(x-cx)*s+(y-cy)*c])};
+  const ring=(cx,cy,r,n,rot0=0,sx=1,sy=1)=>{const p=poly(cx,cy,r,n,rot0,sx,sy);return 'M'+p.map(q=>f1(q[0])+' '+f1(q[1])).join('L')+'Z'};
+  // 通用部件（返回 SVG 字符串）
+  const S={
+    body:(c,k=.22)=>facet([[14,204],[24,170],[58,151],[100,146],[142,151],[176,170],[186,204]],c,k),
+    vcol:(c)=>facet([[72,150],[100,178],[128,150],[116,149],[100,166],[84,149]],c,.2),
+    neck:(s)=>facet([[87,116],[113,116],[115,152],[85,152]],tone(s,.9).replace(/rgb\((\d+),(\d+),(\d+)\)/,(m,r,g,b)=>'#'+[r,g,b].map(v=>(+v).toString(16).padStart(2,'0')).join('')),.15),
+    ears:(s)=>facet([[55,88],[64,85],[66,110],[57,106]],s,.2)+facet(mir([[55,88],[64,85],[66,110],[57,106]]),s,.2),
+    face:(s,w=1)=>facet([[62,84],[68,60],[86,48],[100,46],[114,48],[132,60],[138,84],[136,108],[122,130],[100,140],[78,130],[64,108]].map(([x,y])=>[100+(x-100)*w,y]),s,.2),
+    eyes:(y=98,sy=1,col=INK)=>{const e=[[79,0],[82,-5],[88,-5],[91,0],[88,5],[82,5]];const L=e.map(([x,d])=>[x,y+d*sy]);return flat(L,col)+flat(mir(L),col)+flat([[84,y-3*sy],[87.5,y-3*sy],[85.2,y]],'#fff')+flat([[113,y-3*sy],[116.5,y-3*sy],[114.2,y]],'#fff')},
+    big:(y=99)=>{const e=[[78,0],[81,-7],[89,-7],[92,0],[89,7],[81,7]];const L=e.map(([x,d])=>[x,y+d]);return flat(L,INK)+flat(mir(L),INK)+flat([[83,y-5],[88,y-5],[85,y-1]],'#fff')+flat([[112,y-5],[117,y-5],[114,y-1]],'#fff')},
+    shut:(y=99)=>line(`M78 ${y} L85 ${y-5} L92 ${y}`,INK,3)+line(`M108 ${y} L115 ${y-5} L122 ${y}`,INK,3),
+    smileEyes:(y=99)=>line(`M78 ${y-2} L85 ${y+3} L92 ${y-2}`,INK,3)+line(`M108 ${y-2} L115 ${y+3} L122 ${y-2}`,INK,3),
+    sharp:(y=99)=>{const L=[[75,y+2],[84,y-5],[93,y],[84,y+4]];return flat(L,INK)+flat(mir(L),INK)+line(`M75 ${y+2} L69 ${y-3}`,INK,2.2)+line(`M125 ${y+2} L131 ${y-3}`,INK,2.2)},
+    lash:(y=98)=>line(`M79 ${y-3} L73 ${y-7} M82 ${y-5} L79 ${y-10}`,INK,1.8)+line(`M121 ${y-3} L127 ${y-7} M118 ${y-5} L121 ${y-10}`,INK,1.8),
+    brow:(y=88,ang=0,col=INK,w=3)=>line(`M76 ${y+ang} L92 ${y-ang}`,col,w)+line(`M124 ${y+ang} L108 ${y-ang}`,col,w),
+    smile:(col='#8a3a3a')=>flat([[91,117],[109,117],[105,124],[95,124]],col),
+    grin:(col='#7a2e2e')=>flat([[85,115],[115,115],[109,127],[91,127]],col)+flat([[89,116],[111,116],[109,119],[91,119]],'#fff'),
+    flatmouth:()=>line('M93 121 L107 121',INK,3),
+    smirk:()=>line('M93 121 L102 123 L111 117',INK,3),
+    lips:(c='#c2304a')=>flat([[94,119],[100,117],[106,119],[100,124]],c),
+    wmouth:()=>line('M93 119 L96.5 123 L100 119 L103.5 123 L107 119',INK,2.4),
+    blush:(op=.45)=>flat(poly(74,112,7,6,0,1.2,.7),'#ff7f86',op)+flat(poly(126,112,7,6,0,1.2,.7),'#ff7f86',op),
+    capM:(h)=>facet([[58,96],[54,66],[70,46],[100,36],[130,46],[146,66],[142,96],[132,74],[114,64],[90,66],[70,74]],h,.25),
+    bangs:(h)=>facet([[56,102],[52,64],[72,42],[100,32],[128,42],[148,64],[144,102],[136,76],[120,66],[104,74],[88,64],[70,76]],h,.25),
+    part:(h)=>facet([[56,102],[52,64],[72,42],[100,32],[128,42],[148,64],[144,102],[136,78],[118,64],[100,62],[82,64],[64,78]],h,.25),
+    side:(h)=>facet([[56,104],[52,62],[74,40],[104,32],[130,42],[148,66],[144,102],[138,80],[124,68],[104,66],[80,78],[64,90]],h,.25),
+    longBack:(h)=>facet([[54,90],[58,54],[100,34],[142,54],[146,90],[156,180],[128,188],[72,188],[44,180]],h,.2),
+    bun:(h,x=100,y=36,r=15)=>facet(poly(x,y,r,7,-90),h,.3),
+    flower:(x,y,c='#ffd1dc',cc='#f2c14e',r=4)=>[0,1,2,3,4].map(i=>{const a=-Math.PI/2+i*2*Math.PI/5;return flat(poly(x+Math.cos(a)*r*1.2,y+Math.sin(a)*r*1.2,r,6),c)}).join('')+flat(poly(x,y,r*.6,6),cc),
+  };
+  function bgLayer(col){
+    const g=[];const N=4;
+    for(let i=0;i<=N;i++){g.push([]);for(let j=0;j<=N;j++){const x=j*200/N,y=i*200/N;const jx=(j>0&&j<N)?(rnd()-.5)*30:0,jy=(i>0&&i<N)?(rnd()-.5)*30:0;g[i].push([x+jx,y+jy])}}
+    let o='';
+    for(let i=0;i<N;i++)for(let j=0;j<N;j++){const a=g[i][j],b=g[i][j+1],c=g[i+1][j+1],d=g[i+1][j];
+      const f=()=>tone(col,1+(.5-(i+j)/(2*N))*.25+(rnd()-.5)*.12);
+      if((i+j)%2){o+=tri(a,b,c,f())+tri(a,c,d,f())}else{o+=tri(a,b,d,f())+tri(b,c,d,f())}}
+    return o;
+  }
+  const CAMP={qj:{n:'取经团',c:'#e39b2d'},tt:{n:'天庭',c:'#3d7fc1'},mw:{n:'魔王',c:'#c8412f'},jg:{n:'精怪',c:'#8150b5'},rj:{n:'人间',c:'#3a9a6b'}};
+  const SK='#f2c9a5',SKF='#f6d3b8',HAIR='#2a2430';
+  const D={
+    wk:()=>{const fur='#9a5b2a';return S.body('#c9422f')+S.vcol('#f2c14e')+S.neck('#d9a074')
+      +facet(poly(45,100,15,6),fur,.25)+flat(poly(45,100,8,6),'#e6b385')+facet(poly(155,100,15,6),fur,.25)+flat(poly(155,100,8,6),'#e6b385')
+      +facet([[54,86],[58,58],[78,42],[100,38],[122,42],[142,58],[146,86],[144,112],[128,136],[100,146],[72,136],[56,112]],fur,.25)
+      +facet([[88,46],[94,28],[100,42],[107,26],[112,46]],fur,.3)
+      +facet([[70,90],[74,74],[88,70],[100,80],[112,70],[126,74],[130,90],[128,112],[116,132],[100,138],[84,132],[72,112]],'#f2c99a',.18)
+      +S.eyes(94)+flat([[97,105],[103,105],[100,109]],INK)+S.grin()
+      +facet([[52,74],[70,62],[100,56],[130,62],[148,74],[148,82],[130,70],[100,64],[70,70],[52,82]],'#e5b51f',.35)
+      +facet(poly(52,78,6,6),'#e5b51f',.3)+facet(poly(148,78,6,6),'#e5b51f',.3)},
+    ts:()=>S.body('#b8342c')+facet([[30,184],[146,150],[160,172],[44,204]],'#e7c25a',.25)+S.neck(SK)+S.ears('#f4d4b6')+S.face('#f4d4b6')
+      +S.brow(89,1,INK,2.5)+S.shut(100)+S.smile()+S.blush(.3)
+      +facet([[56,62],[144,62],[144,73],[56,73]],'#cf972c',.25)
+      +facet([[58,64],[64,40],[78,54],[88,32],[100,50],[112,32],[122,54],[136,40],[142,64]],'#e3b343',.3),
+    bj:()=>{const s='#f3ae9f';return S.body('#2f3b5a')+S.vcol('#1d253b')+S.neck('#e5958a')
+      +facet([[62,66],[40,52],[32,78],[48,102],[60,88]],'#e48d80',.25)+facet(mir([[62,66],[40,52],[32,78],[48,102],[60,88]]),'#e48d80',.25)
+      +S.face(s,1.12)+S.eyes(90,.85)
+      +facet(poly(100,110,18,6,0,1,.68),'#eb9384',.2)+flat(poly(94,110,3,6),INK)+flat(poly(106,110,3,6),INK)
+      +flat([[93,126],[107,126],[104,131],[96,131]],'#8a3a3a')+S.blush(.35)},
+    ss:()=>{const s='#c69c7c';let beads='';for(let i=0;i<9;i++){const x=62+i*9.5;const y=150+20*(1-Math.pow((x-100)/40,2));beads+=facet(poly(x,y,5.5,6),'#efe2c4',.3)}
+      return S.body('#6b4f3a')+S.vcol('#d98a3d')+S.neck(s)+S.ears(s)+S.face(s)+S.brow(87,-1,INK,4.5)+S.eyes(99)
+      +facet([[68,114],[80,124],[100,130],[120,124],[132,114],[128,140],[112,156],[100,160],[88,156],[72,140]],'#8a3b22',.25)
+      +facet([[82,118],[100,111],[118,118],[112,122],[100,117],[88,122]],'#8a3b22',.2)+beads},
+    bl:()=>S.body('#eef1f5')+S.vcol('#2f8f8c')+S.neck('#f4d2b6')+S.ears('#f4d2b6')+S.face('#f4d2b6')+S.brow(89,.5)+S.eyes(99)+line('M93 121 L100 123 L107 121',INK,3)
+      +S.capM(HAIR)+facet(poly(100,40,11,6,-90),HAIR,.3)+flat([[91,48],[109,48],[109,53],[91,53]],'#2f8f8c')
+      +facet([[74,58],[64,34],[71,42],[69,28],[80,48]],'#e9c46a',.3)+facet(mir([[74,58],[64,34],[71,42],[69,28],[80,48]]),'#e9c46a',.3),
+    el:()=>S.body('#c5cad4')+facet(poly(40,168,24,6),'#a6adbc',.3)+facet(poly(160,168,24,6),'#a6adbc',.3)+line('M74 172 H126 M78 188 H122','#8e96a8',4)
+      +S.neck('#f0cdb0')+S.ears('#f0cdb0')+S.face('#f0cdb0')+S.brow(93,-3,INK,4)+S.eyes(101,.7)+S.flatmouth()
+      +facet([[56,90],[54,62],[70,44],[100,36],[130,44],[146,62],[144,90],[136,80],[126,64],[100,60],[74,64],[64,80]],'#d6a634',.35)
+      +facet([[92,40],[100,14],[108,40]],'#d6a634',.35)+flat(poly(100,52,5,6),'#c0392b')
+      +flat([[100,69],[104,77],[100,86],[96,77]],'#c0392b')+flat([[100,73],[102,77],[100,82],[98,77]],INK),
+    nz:()=>S.body('#f1a7b8')+line('M70 148 Q100 168 130 148','#e5b51f',7)
+      +facet([[14,176],[60,160],[100,172],[140,156],[186,168],[186,180],[140,168],[100,184],[60,172],[14,188]],'#d7262e',.3)
+      +S.neck(SKF)+S.ears(SKF)+S.face(SKF,.98)+S.brow(89,-2,INK,3.2)+S.big(100)+S.smile()+S.blush(.55)
+      +S.capM(HAIR)+S.bun(HAIR,66,46,13)+S.bun(HAIR,134,46,13)+flat([[100,66],[103,71],[100,76],[97,71]],'#d7262e'),
+    tb:()=>S.body('#f2ecd6')+S.vcol('#d6a634')+S.neck('#f2d2b6')+S.ears('#f2d2b6')+S.face('#f2d2b6')
+      +facet([[56,94],[54,66],[70,46],[100,38],[130,46],[146,66],[144,94],[136,72],[100,60],[64,72]],'#eeeeee',.2)+S.bun('#f4f4f4',100,38,11)
+      +S.smileEyes(100)+flat([[72,93],[92,86],[92,90],[70,99]],'#ffffff')+flat(mir([[72,93],[92,86],[92,90],[70,99]]),'#ffffff')
+      +facet([[70,112],[84,126],[100,130],[116,126],[130,112],[126,150],[112,176],[100,186],[88,176],[74,150]],'#f7f7f7',.12)
+      +facet([[82,116],[100,110],[118,116],[112,121],[100,117],[88,121]],'#ffffff',.1),
+    nm:()=>S.body('#2a2a33')+S.vcol('#c9a24a')+S.neck('#a06c4a')
+      +facet([[66,64],[48,52],[32,30],[30,12],[46,28],[64,42],[78,54]],'#efe1c0',.3)+facet(mir([[66,64],[48,52],[32,30],[30,12],[46,28],[64,42],[78,54]]),'#efe1c0',.3)
+      +S.ears('#b07a55')+S.face('#b07a55',1.1)+S.capM('#1e1a1f')+S.brow(89,-2.5,INK,5)+S.eyes(100)+S.grin()+line('M94 110 L100 116 L106 110','#e5b51f',3),
+    hh:()=>facet([[10,204],[4,170],[22,156],[16,134],[34,152],[40,204]],'#ffa53a',.3)+facet(mir([[10,204],[4,170],[22,156],[16,134],[34,152],[40,204]]),'#ffa53a',.3)
+      +S.body('#f6d0b0')+facet([[64,152],[100,142],[136,152],[100,204]],'#d7262e',.3)
+      +S.neck('#f6d0b0')+S.ears('#f6d0b0')+S.face('#f6d0b0')+S.brow(89,-2.5,INK,3.5)+S.big(101)+S.smirk()+S.blush(.6)
+      +facet([[58,94],[54,66],[60,50],[72,54],[78,36],[90,48],[100,28],[110,48],[122,36],[128,54],[140,50],[146,66],[142,94],[132,72],[100,64],[68,72]],HAIR,.3),
+    jj:()=>S.body('#d9a52b')+S.vcol('#8a2a1f')+S.neck('#d9a77e')+S.ears('#e8b98f')+S.face('#e8b98f')
+      +facet(poly(160,126,9,6),'#b0482a',.3)+facet(poly(160,150,14,7),'#b0482a',.3)+flat([[153,136],[167,136],[167,140],[153,140]],'#e5b51f')
+      +S.brow(90,-2.5,INK,3.5)+S.eyes(100,.6)+S.smirk()+S.capM('#2a2026')+facet([[93,54],[100,20],[107,54]],'#f0c43a',.35),
+    yj:()=>S.body('#c9cfd8')+S.vcol('#5a6378')+S.neck('#d9a77e')+S.ears('#e8b98f')+S.face('#e8b98f')
+      +facet([[34,150],[38,130],[33,120],[47,120],[42,130],[48,150],[45,168],[37,168]],'#dff0e8',.3)
+      +S.brow(91,-3,INK,3.5)+S.sharp(100)+S.smirk()+S.capM('#2a2026')+facet([[93,54],[100,20],[107,54]],'#eef1f4',.35),
+    hf:()=>{const fur='#d9a441';return line('M14 50 q20 -16 36 0 q-12 8 -20 0 M150 30 q22 -12 36 4 q-12 6 -20 -2 M20 150 q18 -10 30 2','#ffffff',4,.45)
+      +S.body('#7a5a2a')+S.vcol('#c9a24a')+S.neck('#c08a36')
+      +facet([[60,74],[54,38],[82,58]],fur,.3)+facet(mir([[60,74],[54,38],[82,58]]),fur,.3)+flat([[62,68],[59,48],[75,60]],'#f3d38a')+flat(mir([[62,68],[59,48],[75,60]]),'#f3d38a')
+      +S.face(fur,1.04)+facet([[82,108],[100,100],[118,108],[114,124],[100,131],[86,124]],'#f5e0a8',.15)
+      +S.eyes(96,.75)+flat([[96,106],[104,106],[100,111]],INK)+line('M84 114 L66 110 M84 118 L66 120 M116 114 L134 110 M116 118 L134 120',INK,1.5)+line('M94 122 L100 125 L106 122',INK,2.5)},
+    hx:()=>{const fur='#2b2629';return S.body('#1f1f26')+facet([[30,184],[146,150],[160,172],[44,204]],'#c9a24a',.25)+S.neck('#3a3436')
+      +facet(poly(58,58,15,6),fur,.3)+flat(poly(58,58,8,6),'#5a4a48')+facet(poly(142,58,15,6),fur,.3)+flat(poly(142,58,8,6),'#5a4a48')
+      +S.face(fur,1.12)+facet(poly(100,114,18,6,0,1.1,.85),'#a88a72',.2)+flat(poly(100,106,5,6,0,1.2,.8),INK)
+      +S.eyes(94,.8,'#f2e6d8')+flat(poly(84,94,3,6),INK)+flat(poly(116,94,3,6),INK)+line('M93 120 L100 124 L107 120',INK,2.5)},
+    nr:()=>S.longBack(HAIR)+S.body('#b8335a')+S.vcol('#e2b544')+S.neck(SKF)+S.face(SKF)+S.eyes(99)+S.lash(99)+S.smile('#b8323b')+S.blush(.45)+S.part(HAIR)
+      +facet([[70,58],[76,40],[88,52],[100,30],[112,52],[124,40],[130,58]],'#e2b544',.35)+flat(poly(100,48,4.5,6),'#d6304f'),
+    ce:()=>facet(poly(162,40,22,12),'#f4efd2',.15)+flat(poly(32,40,2,4),'#fff')+flat(poly(48,72,1.6,4),'#fff')+flat(poly(178,100,1.8,4),'#fff')
+      +S.longBack(HAIR)+S.body('#cfe3f3')+line('M20 176 Q56 150 82 186 Q110 172 140 160 Q160 188 184 166','#ffffff',7,.9)
+      +S.neck(SKF)+S.face('#f8e2d2')+S.shut(100)+S.lash(100)+S.lips('#c75a6a')+S.blush(.3)+S.part(HAIR)
+      +line(ring(80,38,10,6,-90,1,1.6),HAIR,7)+line(ring(120,38,10,6,-90,1,1.6),HAIR,7)+flat(poly(100,58,4,6),'#9ec8e8'),
+    qx:()=>S.longBack('#3a2a30')+S.body('#f08fa8')+line('M20 172 Q60 156 92 182 Q130 160 184 176','#fff3f6',6,.9)+S.vcol('#ffffff')
+      +S.neck(SKF)+S.face(SKF)+S.big(100)+S.lash(100)+S.smile('#c24a62')+S.blush(.55)+S.bangs('#3a2a30')+S.flower(136,60)+S.flower(64,66,'#fff','#f2c14e',3),
+    yt:()=>{const ear=(x,a)=>facet(rot(poly(x,30,11,6,-90,1,2.8),x,58,a),'#ffffff',.2)+flat(rot(poly(x,32,5,6,-90,1,3.6),x,58,a),'#f6b3c4');
+      return ear(80,-12)+ear(120,12)+facet([[54,96],[52,60],[100,46],[148,60],[146,96],[150,132],[132,136],[122,118],[78,118],[68,136],[50,132]],'#f4f2f7',.15)
+      +S.body('#f29bb3')+S.vcol('#ffffff')+S.neck('#fae3d6')+S.face('#fae3d6')+S.big(101)+S.wmouth()+S.blush(.65)+S.bangs('#f4f2f7')},
+    bg:()=>line('M10 60 q30 -14 60 0 M120 28 q30 -12 60 2 M140 182 q20 -8 40 0','#ffffff',5,.3)
+      +S.longBack('#e5e1ee')+S.body('#e9e7f0')+S.vcol('#4a3b63')+S.neck('#f1ebf3')+S.face('#f1ebf3')
+      +flat(poly(84,95,8,6,0,1.3,.6),'#8b6bb5',.35)+flat(poly(116,95,8,6,0,1.3,.6),'#8b6bb5',.35)+S.sharp(100)+S.lips()+S.side('#e5e1ee')
+      +facet(poly(140,64,8.5,7),'#ffffff',.2)+flat(poly(137,63,2.3,6),INK)+flat(poly(143,63,2.3,6),INK)+flat([[135,69],[145,69],[144,74],[136,74]],'#ffffff'),
+    zz:()=>line('M0 0 L96 30 M0 0 L80 70 M0 0 L40 96 M0 0 L10 100 M34 11 L13 34 M64 20 L26 64 M88 28 L36 90','#ffffff',1.6,.35)
+      +S.longBack('#3b2148')+S.body('#a865c9')+S.vcol('#2b1838')+S.neck(SKF)+S.face(SKF)
+      +line('M78 99 L85 95 L92 99',INK,3)+flat([[109,99],[112,94],[118,94],[121,99],[118,104],[112,104]],INK)+S.lash(99)+S.smile('#a8305a')+S.blush(.45)+S.bangs('#3b2148')
+      +flat(poly(62,64,5,6),INK)+flat(poly(62,57,3.5,6),INK)+line('M58 64 L51 60 M58 66 L51 69 M66 64 L73 60 M66 66 L73 69',INK,1.8),
+    xz:()=>{let tail='';const pts=[[128,40],[136,30],[146,24],[156,24],[164,30],[168,40]];pts.forEach((p,i)=>tail+=facet(poly(p[0],p[1],5.5-i*.3,6),'#c0392b',.3));
+      return S.longBack('#3a1820')+S.body('#5a1e2a')+S.vcol('#d6a634')+S.neck('#f3d0b6')+S.face('#f3d0b6')+S.brow(90,-2.5,INK,2.8)+S.sharp(100)+S.lips('#8e1c2c')+S.side('#3a1820')
+      +S.bun('#3a1820',122,40,13)+tail+facet([[164,40],[176,46],[166,50]],'#c0392b',.3)},
+    xx:()=>S.flower(30,40,'#ffe3e8')+S.flower(172,150,'#ffe3e8')+S.longBack('#3a2a26')+S.body('#f6c2a8')+S.vcol('#7aa35a')+S.neck(SKF)+S.face(SKF)
+      +S.shut(100)+S.lash(100)+S.smile('#c45a5a')+S.blush(.5)+S.part('#3a2a26')+S.flower(64,62,'#ffe3e8')+S.flower(136,58,'#ffffff')+S.flower(148,72,'#ffd1dc','#f2c14e',3),
+    ym:()=>facet([[64,60],[58,24],[88,46]],'#c99a63',.3)+facet(mir([[64,60],[58,24],[88,46]]),'#c99a63',.3)+flat([[66,54],[63,34],[80,48]],'#f6c9c0')+flat(mir([[66,54],[63,34],[80,48]]),'#f6c9c0')
+      +S.longBack('#c99a63')+S.body('#f3d6e0')+S.vcol('#e2b544')+S.neck('#f7e6dc')+S.face('#f7e6dc')
+      +flat([[76,101],[84,95],[93,97],[86,102]],INK)+flat(mir([[76,101],[84,95],[93,97],[86,102]]),INK)+S.lash(98)+S.lips('#d0506a')+S.blush(.4)+S.part('#c99a63'),
+    tf:()=>facet([[150,40],[176,60],[184,96],[174,128],[156,140],[140,120],[136,84],[140,56]],'#6aa84f',.3)+line('M156 50 L158 136 M157 80 L140 70 M157 80 L178 72 M157 106 L138 98 M158 106 L180 98','#3f7a32',2.5)
+      +facet([[154,136],[162,136],[160,184],[156,184]],'#8a5a2b',.2)
+      +S.body('#2f6d4f')+S.vcol('#e05a3a')+S.neck(SKF)+S.ears(SKF)+S.face(SKF)+S.brow(89,-2.5,INK,3)+S.eyes(100)+S.lash(100)+S.smile('#b8323b')+S.blush(.35)
+      +S.bangs(HAIR)+S.bun(HAIR,100,36,16)+line('M80 32 L122 42','#e2b544',4)
+  };
+  function draw(k,camp){
+    seed=7+[...k].reduce((s,c)=>s+c.charCodeAt(0),0);
+    const id='cp'+k+(draw.n=(draw.n||0)+1);
+    return `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="角色头像"><defs><clipPath id="${id}"><circle cx="100" cy="100" r="100"/></clipPath></defs><g clip-path="url(#${id})">${bgLayer(CAMP[camp].c)}${D[k]()}</g></svg>`;
+  }
+  return {draw,CAMP,keys:Object.keys(D)};
+})();
+
+/* ---------- 西游测试：角色 ---------- */
+// v = [热闹(+)/安静(-), 行动(+)/谋略(-), 重情(+)/理智(-), 不羁(+)/守序(-)]
+const XY=[
+{k:'wk',g:'m',camp:'qj',n:'孙悟空',v:[1,1,0,1],tag:'本事大，脾气也不小，遇事先冲为敬',
+ p:'你是天生的行动派，脑子转得快、手更快，看到问题第一反应就是“我来”。你骨子里有一股不服输的劲儿，越是有人说不行，你越要证明给他看。你不喜欢被规矩捆住，也受不了磨磨蹭蹭的人和事。这种冲劲让你常常成为团队里最能打的那一个，但也让你在和领导、长辈相处时容易硬碰硬。其实你心里很讲义气，只是不太会把在乎说出口。',
+ story:'原著里的孙悟空从石头里蹦出来，学艺、闹龙宫、闯天庭，一身本事却被压在五行山下五百年。跟着唐僧取经后，他一路降妖除魔，却屡次因为脾气被误会、被赶走，可每次师父有难，他还是第一个赶回来。',
+ s:['行动力极强，说干就干，从不拖延','学东西快，上手快，悟性高','关键时刻能扛事，越难越来劲','讲义气，认定的人会拼命护着'],
+ b:['性子急，容易和慢节奏的人起冲突','不爱被管，和领导、长辈容易顶牛','有本事就容易骄傲，听不进建议'],
+ work:'你是团队里的“救火队员”，难题交给你最放心。适合需要冲劲和应变的工作，比如销售、创业、项目攻坚。做成了事也要照顾别人的感受，别让功劳变成矛盾。',
+ love:'喜欢一个人会很直接，愿意为对方出头，但不太会说甜言蜜语。你需要一个能理解你脾气、又不和你硬碰硬的人。吵架时你嗓门大，气消得也快。',
+ friend:'朋友眼里你是靠得住的“老大”，有事一个电话就到。只是偶尔说话太冲，会让敏感的朋友受伤。',
+ a:['冲之前先停三秒，想想后果','身边留一个能稳住你的人，听听他的意见','学会把关心说出口，别只用行动表达'],
+ mate:'沙僧。他守得住后方，你才能放心往前冲。',rival:'二郎神。你们实力相当，谁也不服谁，见面就想比一比。'},
+{k:'ts',g:'m',camp:'qj',n:'唐僧',v:[0,-1,1,-1],tag:'认准的路，九九八十一难也要走完',
+ p:'你是一个目标感极强、内心有原则的人。别人看你可能觉得温和甚至有点软，但只要是你认定的事，再难你也会坚持到底。你重视规矩和底线，相信做人要有原则，也愿意用善意对待每一个人。你的坚持是团队最稳的定海神针，不过太重原则也让你有时不够灵活，容易被表面的好意蒙蔽。',
+ story:'原著里的唐僧奉命西行取经，手无缚鸡之力，一路上被妖怪抓了一次又一次，却从没动摇过去西天的决心。他心地善良，常常被妖怪的伪装骗到，也因此和悟空闹过不少误会。',
+ s:['目标坚定，不轻易放弃','有原则、守底线，让人信任','心地善良，愿意包容别人','能把一群性格各异的人凝聚在一起'],
+ b:['太讲原则，有时不懂变通','心软，容易被表面的好意骗','爱讲道理，有时显得唠叨'],
+ work:'你适合需要长期坚持、讲规范的工作，比如管理、教育、行政、项目统筹。你是团队方向的守护者，但要学会信任有能力的人，别事事都按自己的标准来。',
+ love:'你对感情认真专一，重视承诺，一旦认定就会长长久久。你需要一个能尊重你原则、又能偶尔带你放松的人。',
+ friend:'朋友觉得你可靠、正直，遇事愿意找你商量。只是你讲道理的时候，偶尔会让人觉得有点说教。',
+ a:['多听听和你意见不同的人，他们可能看到了你没看到的','对陌生人保留一点防备心','给自己留点余地，不必事事较真'],
+ mate:'孙悟空。你定方向，他去开路。',rival:'白骨精。她最懂怎么利用你的善良。'},
+{k:'bj',g:'m',camp:'qj',n:'猪八戒',v:[1,0,1,0],tag:'人生苦短，先吃饱再取经',
+ p:'你懂得享受生活，也懂得让身边的人开心。你情商高、会说话，什么场合都能聊起来，是团队里的开心果。你不太给自己压力，觉得日子是用来过的，不是用来熬的。这种好心态让你很少内耗，人缘也特别好。但遇到真正的困难时，你偶尔会想打退堂鼓，自律也是你的老课题。',
+ story:'原著里的猪八戒原是天蓬元帅，因为犯错被贬下凡，投错了胎。他贪吃、偷懒、爱发牢骚，动不动就喊“散伙”，可真到了打妖怪的时候，他也是出了力的，而且一路上最会逗大家开心。',
+ s:['情商高，会说话，人缘好','心态好，很少内耗','会享受生活，懂得放松','能调节气氛，让团队不那么紧绷'],
+ b:['遇到困难容易想放弃','自律差，计划常常坚持不下去','有时爱抱怨、爱占小便宜'],
+ work:'你适合和人打交道的工作，比如销售、客服、活动、商务，客户和同事都会喜欢你。要注意别光会说，关键任务要按时交付。',
+ love:'你很会疼人，懂浪漫，也愿意为对方花心思。只是有时太享受当下，对未来的规划少了一些。',
+ friend:'你是朋友圈里最受欢迎的那一个，聚会少了你就冷场。朋友喜欢你，因为和你在一起很轻松。',
+ a:['给自己定一个小目标，公开告诉身边的人','找一个能督促你的朋友一起坚持','遇到困难先撑三天，再考虑放弃'],
+ mate:'唐僧。他的坚持能拉着你走到终点。',rival:'孙悟空。他最爱捉弄你，你也最爱告他的状。'},
+{k:'ss',g:'m',camp:'qj',n:'沙僧',v:[-1,-.5,.5,-1],tag:'话不多，活儿全干了',
+ p:'你踏实、靠谱、任劳任怨，是团队里最让人放心的人。你不爱出风头，也不爱争抢，只想把手上的事做好。很多时候团队能顺利运转，靠的就是你默默做的那些不起眼的工作。可惜你做得多、说得少，常常被忽视，有委屈也习惯自己咽下去。',
+ story:'原著里的沙僧原是天上的卷帘大将，因失手打碎琉璃盏被贬到流沙河。跟随唐僧后，他一路挑担、照顾师父，话最少，却从没喊过一句苦，是取经路上最稳的那一个。',
+ s:['可靠，交给你的事从不掉链子','有耐心，能长期坚持','不抱怨，情绪稳定','善于观察，能注意到别人忽略的细节'],
+ b:['不争功劳，容易被埋没','习惯委屈自己，不好意思拒绝','存在感低，好机会容易被别人抢走'],
+ work:'你适合需要细心和稳定的岗位，比如财务、运营、技术支持、后勤管理。领导迟早会发现你的价值，但你要主动让他早点发现。',
+ love:'你对感情专一，用行动表达爱，是能陪伴一辈子的那种人。但你要学会说出自己的需要，别让对方猜。',
+ friend:'你是朋友眼中最靠谱的倾听者，谁有心事都愿意找你聊。',
+ a:['做了的事要让人知道，定期汇报成果','学会说“不”，你的时间也很宝贵','遇到想要的机会，主动争取一次'],
+ mate:'猪八戒。他帮你说话，你帮他干活。',rival:'黄风怪。你最怕有人在背后刮风搅局。'},
+{k:'bl',g:'m',camp:'qj',n:'白龙马',v:[-1,.5,0,-.5],tag:'平时低调，关键时刻能顶上',
+ p:'你不爱出风头，存在感不高，但每到关键时刻都靠得住，是典型的隐藏实力派。你适应能力很强，什么环境都待得住，也很少抱怨。你心里其实有自己的骄傲，只是觉得没必要到处说。熟悉你的人都知道，你比看起来厉害得多。',
+ story:'原著里的白龙马原是西海龙王三太子，因为犯错被罚，后来化作白马驮着唐僧走完取经路。他几乎一路沉默，可在宝象国唐僧被变成老虎、师兄们都不在时，是他化回人形挺身而出。',
+ s:['低调务实，不张扬','关键时刻可靠，能挺身而出','适应力强，什么环境都能待','默默积累，后劲很足'],
+ b:['太低调，容易错过机会','不善于表达自己的需求','容易被低估，自己也会怀疑自己'],
+ work:'你适合需要专业积累的岗位，比如技术、研发、设计。你的价值需要时间被看见，所以要学会在关键节点展示自己。',
+ love:'你不擅长甜言蜜语，但会在对方最需要的时候出现。你需要一个能看见你默默付出的人。',
+ friend:'你朋友不多，但个个都是交心的。关键时刻你总能拉朋友一把。',
+ a:['找机会展示一次你的真本事','主动争取一个你想要的位置','别等别人发现你，先让别人认识你'],
+ mate:'唐僧。他最懂你的默默付出。',rival:'银角大王。你踏实，他耍心眼，你最看不惯他。'},
+{k:'el',g:'m',camp:'tt',n:'二郎神',v:[-1,-.5,-1,0],tag:'话少高冷，但实力说明一切',
+ p:'你独立、理性、标准高，不爱扎堆，也懒得解释。你相信实力胜过一切，与其说漂亮话，不如把事情做到最好。你对自己要求极严，对别人也一样，所以有时会显得难以接近。但熟悉你的人都知道，你是真正靠得住、说到做到的实力派。',
+ story:'原著里的二郎神住在灌江口，带着梅山六兄弟和哮天犬。他和孙悟空大战，变化斗法不分高下，最终擒住了大圣。他听调不听宣，连玉帝的面子也不全给。',
+ s:['能力强，专业过硬','冷静理性，遇事不慌','说到做到，一诺千金','独立，不依赖别人'],
+ b:['看起来难以接近，让人有距离感','对人对己都太严格','懒得解释，容易被误会'],
+ work:'你适合需要专业深度的工作，比如技术专家、医生、律师、高级工程师。你是团队里的顶梁柱，但要学会带人，而不是什么都自己扛。',
+ love:'你慢热，不轻易动心，一旦认定会非常认真。你需要一个能看穿你外表高冷、内心其实很靠谱的人。',
+ friend:'你的朋友圈很小，但都是精挑细选的。你不常联系，但朋友有事你一定到。',
+ a:['偶尔放下架子，主动一点','学会欣赏别人的长处','适当解释一下你的想法，别让误会积累'],
+ mate:'哪吒。一个冷静，一个热血，联手无敌。',rival:'孙悟空。棋逢对手，才最有意思。'},
+{k:'nz',g:'m',camp:'tt',n:'哪吒',v:[0,1,.5,1],tag:'少年热血，敢作敢当',
+ p:'你热血、正直、敢作敢当。看到不公平的事，你第一个站出来；认准的事，谁也拦不住你。你重感情、讲义气，对在乎的人掏心掏肺，但脾气上来时也容易冲动。你身上有一种少年感，不管多大年纪，心里那团火从没灭过。',
+ story:'原著里的哪吒是托塔天王李靖的三太子，脚踏风火轮，手持火尖枪，身带乾坤圈和混天绫，是天庭有名的少年战将。他曾奉命捉拿孙悟空，后来在取经路上也多次出手相助。',
+ s:['正义感强，敢于出头','行动力强，说干就干','重感情，讲义气','有少年感，永远充满热情'],
+ b:['容易冲动，不计后果','脾气倔，不肯低头','和长辈、领导容易有矛盾'],
+ work:'你适合充满挑战、能快速看到成果的工作，比如创业、销售、体育、公益。你冲劲十足，但要学会和团队配合，不要单打独斗。',
+ love:'你爱得热烈真诚，会为对方挺身而出。你需要一个能包容你脾气、也能给你安全感的人。',
+ friend:'你是朋友圈里的“正义使者”，朋友受欺负你第一个冲上去。',
+ a:['冲动的时候先深呼吸十秒','学会和长辈好好沟通，而不是硬顶','把热情用在长期目标上'],
+ mate:'二郎神。一个冷静，一个热血，联手无敌。',rival:'红孩儿。同样是少年，同样不服输，见面就要较劲。'},
+{k:'tb',g:'m',camp:'tt',n:'太白金星',v:[.5,-1,.5,-1],tag:'圆融通达，最会化解矛盾',
+ p:'你情商极高、懂得变通。你不喜欢冲突，总能找到让各方都满意的办法。你说话得体、处事圆融，在复杂的人际关系里游刃有余。很多人觉得你“好说话”，其实你心里很有数，只是懂得用最温和的方式达到目的。',
+ story:'原著里的太白金星是天庭的老神仙，孙悟空大闹天宫前后，正是他两次提议招安，让天庭少动刀兵。取经路上，他也常常化身老人给唐僧师徒报信，是出了名的和事佬。',
+ s:['情商高，会说话','善于协调，能化解矛盾','处事圆融，懂得变通','有耐心，看得长远'],
+ b:['太怕冲突，有时会和稀泥','不轻易表达真实想法','容易被当成“老好人”'],
+ work:'你适合需要沟通协调的岗位，比如管理、人力资源、商务谈判、公关。你是团队里的润滑剂，但关键时刻要敢于表明立场。',
+ love:'你体贴周到，很会照顾对方的情绪。但别总是迁就，也要让对方知道你的需要。',
+ friend:'朋友有矛盾都愿意找你调解，你是大家公认的“和事佬”。',
+ a:['关键时刻敢于说出真实想法','不必让所有人都满意','给自己的立场留一点坚持'],
+ mate:'唐僧。你们都讲道理，合作起来非常顺。',rival:'牛魔王。他吃硬不吃软，你那一套在他面前不太管用。'},
+{k:'nm',g:'m',camp:'mw',n:'牛魔王',v:[1,.5,1,.5],tag:'江湖大哥，豪爽仗义',
+ p:'你性格豪爽，讲义气，有老大风范。你喜欢热闹，朋友遍天下，也愿意为朋友两肋插刀。你有自己的地盘和规矩，谁对你好你加倍还，谁惹你你也不客气。你重感情，但也容易被感情牵着走，在几段关系里左右为难。',
+ story:'原著里的牛魔王是孙悟空当年结拜的大哥，号称平天大圣，有妻子铁扇公主和儿子红孩儿，后来又在积雷山和玉面公主一起生活。三借芭蕉扇时，他和悟空从兄弟变成了对手。',
+ s:['讲义气，朋友多','豪爽大方，不计较','有领导力，罩得住人','重感情，对家人朋友好'],
+ b:['容易被感情左右，难以取舍','脾气上来不好劝','有时太爱面子'],
+ work:'你适合需要带团队、拓展资源的工作，比如销售管理、创业、商务拓展。你天生能聚人，但要注意制度，别全靠交情。',
+ love:'你对爱人大方、愿意付出，但要学会专一和取舍，别让身边的人为难。',
+ friend:'你是朋友圈里的“老大”，组局、请客、帮忙都少不了你。',
+ a:['重要的决定，别只凭交情做','学会在感情里做取舍','遇事先冷静，再出手'],
+ mate:'铁扇公主。一个霸气，一个护短，家里谁也不敢惹。',rival:'孙悟空。曾经最好的兄弟，后来最难缠的对手。'},
+{k:'hh',g:'m',camp:'mw',n:'红孩儿',v:[.5,1,-1,1],tag:'年纪不大，脾气不小，谁都不服',
+ p:'你有主见、有冲劲，认定的事九头牛都拉不回来。你骨子里不服输，最讨厌被人小看，越是被质疑，越要证明自己。你很有天赋，也很自信，常常比同龄人更早展现出能力。只是太要面子、听不进劝，有时会让你吃亏。',
+ story:'原著里的红孩儿是牛魔王和铁扇公主的儿子，在火云洞炼成三昧真火，连孙悟空都被他烧得狼狈不堪。他年纪最小，本事一点不小，后来被收服，成了善财童子。',
+ s:['敢想敢干，有冲劲','自信，有天赋','精力旺盛，越战越勇','不服输，抗压能力强'],
+ b:['太要面子，听不进劝','冲动起来不计后果','不太顾及别人的感受'],
+ work:'你适合竞争激烈、靠实力说话的工作，比如销售、电竞、创业。你很容易出成绩，但要学会和前辈相处，别四处树敌。',
+ love:'你喜欢一个人会很主动，但也有点霸道。你需要一个能欣赏你、也能制得住你的人。',
+ friend:'朋友觉得你有个性、有本事，但也有点难搞。真正的朋友会包容你的脾气。',
+ a:['遇事先冷静三秒','偶尔低个头不丢人','多听听前辈的经验，少走弯路'],
+ mate:'孙悟空。打过一架之后，你们会成为最懂彼此的人。',rival:'哪吒。同样是少年，同样不服输，见面就要较劲。'},
+{k:'jj',g:'m',camp:'mw',n:'金角大王',v:[1,-1,-.5,.5],tag:'爱谋划、讲排场，天生的老大',
+ p:'你有领导气场，喜欢运筹帷幄，凡事先谋后动。你懂得利用资源和工具，擅长制定计划、调兵遣将。你重视排场和面子，希望自己说话有分量。你心思缜密，但也容易因为太自信而低估对手。',
+ story:'原著里的金角大王和弟弟银角大王占据平顶山莲花洞，手握紫金红葫芦、羊脂玉净瓶等宝贝，一度把唐僧师徒折腾得够呛。后来才知道，兄弟俩原是太上老君看炉的童子。',
+ s:['有领导力，能统筹全局','善于谋划，凡事有计划','懂得利用资源和工具','有气场，镇得住场面'],
+ b:['太爱面子，讲排场','容易轻敌，过度自信','习惯指挥别人，自己动手少'],
+ work:'你适合管理、策划、运营统筹类工作。你是天生的指挥官，但要记得给执行的人足够的认可。',
+ love:'你在感情里喜欢掌控节奏，愿意为对方安排好一切。但别忘了问问对方想要什么。',
+ friend:'你是朋友圈的组织者，大事小事都喜欢你来拍板。',
+ a:['别低估任何对手','偶尔亲自上阵，团队会更服你','面子重要，里子更重要'],
+ mate:'银角大王。你谋划，他执行，兄弟同心。',rival:'孙悟空。你的宝贝再多，也架不住他变来变去。'},
+{k:'yj',g:'m',camp:'mw',n:'银角大王',v:[-.5,.5,-1,1],tag:'心思活络，敢想敢做的执行派',
+ p:'你脑子灵、点子多，敢冒险也敢出手。你善于找到别人没发现的机会，行动起来又快又准。你不喜欢被规矩束缚，更愿意用自己的方式解决问题。你很机灵，但有时太相信自己的小聪明，反而会栽跟头。',
+ story:'原著里的银角大王是金角大王的弟弟，比哥哥更主动、更敢出手。他用移山之法压住孙悟空，又拿着葫芦叫人名字收人，最后却被悟空用假葫芦骗了，反被收进了自家宝贝里。',
+ s:['脑子灵，反应快','敢冒险，执行力强','善于发现机会','点子多，不按常理出牌'],
+ b:['太相信小聪明，容易被反套路','不太守规矩','有时只顾眼前，不想后果'],
+ work:'你适合需要灵活应变的工作，比如市场、新媒体、商务拓展。你善于抓住机会，但要做好风险控制。',
+ love:'你在感情里很会制造惊喜，但有时套路太多，真诚一点会更打动人。',
+ friend:'朋友觉得你机灵有趣、鬼点子多，跟你在一起总有新鲜事。',
+ a:['小聪明之外，多一点踏实','做决定前想想最坏的结果','真诚比套路更长久'],
+ mate:'金角大王。他谋划，你执行，兄弟同心。',rival:'白龙马。他踏实，你耍心眼，他最看不惯你。'},
+{k:'hf',g:'m',camp:'mw',n:'黄风怪',v:[-1,1,-.5,1],tag:'平时不吭声，出手就是一阵风',
+ p:'你平时低调，不爱社交，喜欢待在自己的地盘里。但一旦被惹到或者机会来了，你出手又快又狠，让人措手不及。你有自己的独门绝技，不轻易示人。你独立、果断，不喜欢解释，也不在乎别人怎么看。',
+ story:'原著里的黄风怪本是灵山脚下的一只黄毛貂鼠，因偷吃琉璃盏里的清油逃到黄风岭。他一口三昧神风吹得孙悟空睁不开眼，是取经路上第一个让大圣吃了大亏的妖怪。',
+ s:['果断，出手快准狠','有独门绝技','独立，不依赖别人','关键时刻爆发力强'],
+ b:['不爱沟通，容易被误解','脾气来了不好收场','太封闭，错过很多合作机会'],
+ work:'你适合有专业技能、能独立完成的工作，比如技术、设计、自由职业。你一个人能顶一个团队，但适当合作会让你走得更远。',
+ love:'你慢热、不善表达，但认定了就很执着。你需要一个能给你空间、又能慢慢走进你内心的人。',
+ friend:'你朋友不多，但不惹你的人都会觉得你很好相处。',
+ a:['多和身边的人沟通，别让误会积累','控制情绪，别一阵风刮完再后悔','把绝技分享出来，你会收获更多'],
+ mate:'黑熊精。两个低调的人，相处起来最舒服。',rival:'沙僧。他最怕你在背后刮风搅局。'},
+{k:'hx',g:'m',camp:'mw',n:'黑熊精',v:[-.5,-.5,0,0],tag:'稳重有品位，懂得审时度势',
+ p:'你稳重、有品位，喜欢美好的东西，也懂得欣赏。你不爱冒险，做事有分寸，懂得审时度势。你看起来憨厚，其实心里很有数，知道什么时候该坚持、什么时候该退一步。你重视安稳的生活，也能在合适的位置上发挥最大的价值。',
+ story:'原著里的黑熊精住在黑风山，因为看上了唐僧的锦襕袈裟，趁着火灾把它偷走，还要办个“佛衣会”。被收服后，他做了守山大神，从妖怪变成了正神，算是最会转型的一位。',
+ s:['稳重，有分寸','有品位，懂欣赏','审时度势，懂得变通','适应力强，能找到合适的位置'],
+ b:['有时太求安稳，错过机会','看到喜欢的东西容易冲动','不爱表达，别人不知道你在想什么'],
+ work:'你适合稳定、有专业积累的岗位，比如设计、品牌、鉴定、管理。你懂得在合适的平台上发光。',
+ love:'你对感情稳重踏实，懂得经营生活的仪式感，是很好的长期伴侣。',
+ friend:'朋友觉得你憨厚可靠、品位不错，常找你推荐好东西。',
+ a:['偶尔走出舒适区，试试新东西','喜欢的东西，用正当的方式争取','多分享你的想法'],
+ mate:'黄风怪。两个低调的人，相处起来最舒服。',rival:'孙悟空。你好不容易到手的宝贝，他总能给你要回去。'},
+{k:'bg',g:'f',camp:'jg',n:'白骨精',v:[-.5,-1,-1,1],tag:'清醒聪明，想要的东西自己争取',
+ p:'你心思缜密，看人看事都很透彻，不轻易被感情左右。你有清晰的目标，并且知道怎么一步一步拿到它。你擅长观察，懂得在不同场合展示不同的一面。你很少把真实想法摆在脸上，外人觉得你神秘，其实你只是比别人更清醒。',
+ story:'原著里的白骨精住在白虎岭，三次变化成村姑、老妇、老翁接近唐僧，都被孙悟空一眼识破。她虽然最终落败，却成功离间了唐僧和悟空，让师父把徒弟赶走，是取经路上最有心计的妖怪之一。',
+ s:['头脑清醒，看人很准','目标明确，执行有计划','应变能力强，善于随机应变','独立，不依赖任何人'],
+ b:['防备心重，不容易信任别人','有时显得太有距离感','太看重结果，忽略过程中的感情'],
+ work:'你适合需要洞察力和策略的工作，比如市场分析、谈判、法务、投资。你很擅长在复杂局面里找到突破口。',
+ love:'你不轻易动心，对感情很理性。一旦认定，会用自己的方式默默经营。你需要一个真诚、不玩套路的人。',
+ friend:'你的朋友不多，但你对真正的朋友很仗义。外人觉得你难以接近，熟悉后会发现你很有趣。',
+ a:['给值得的人一点真心','不必事事都算得那么清楚','偶尔示弱，会让你更有人情味'],
+ mate:'女儿国国王。她的温柔，刚好能融化你的戒备。',rival:'孙悟空。你变得再像，也逃不过他的火眼金睛。'},
+{k:'nr',g:'f',camp:'rj',n:'女儿国国王',v:[0,-1,1,-1],tag:'温柔有担当，爱得深也放得下',
+ p:'你温柔、优雅、有责任心，既能照顾别人，又能扛起重担。你重感情，会为在乎的人付出很多；但你也有原则和大局观，懂得在关键时刻做出取舍。你外表柔和，内心却非常坚定。',
+ story:'原著里的女儿国国王治理着一个只有女子的国家，见到唐僧后一见倾心，愿意以一国之富招他为夫。最终她还是在通关文牒上盖了印，目送唐僧西去，成为取经路上最让人动容的一段情。',
+ s:['温柔体贴，善解人意','有责任感，能扛事','识大体，懂取舍','气质优雅，让人信赖'],
+ b:['容易把委屈留给自己','太顾全大局，忽略了自己的感受','对感情太认真，容易受伤'],
+ work:'你适合管理、教育、人力资源、客户服务等需要责任心和亲和力的工作。你是天生的好领导，团队愿意跟着你。',
+ love:'你爱得深沉而真诚，愿意为对方付出一切，也懂得放手。你值得一个同样真心的人。',
+ friend:'朋友眼中你是温柔的“大姐姐”，谁有烦恼都愿意找你倾诉。',
+ a:['也为自己争取一次','难过的时候允许自己软弱','别总把别人放在自己前面'],
+ mate:'嫦娥。她懂你的不容易。',rival:'蝎子精。她太强势，和你的温柔水火不容。'},
+{k:'tf',g:'f',camp:'mw',n:'铁扇公主',v:[1,1,1,-.5],tag:'爱憎分明，护短到底',
+ p:'你性格直爽，有一说一，脾气来得快去得也快。你对家人朋友掏心掏肺，谁要欺负你在乎的人，你第一个不答应。你有自己的底线和原则，也有守护家庭的责任感。你看起来强势，其实心里很柔软。',
+ story:'原著里的铁扇公主又叫罗刹女，是牛魔王的妻子、红孩儿的母亲，手握能扇灭火焰山大火的芭蕉扇。因为儿子被收走，她对孙悟空恨之入骨，三借芭蕉扇的故事就是因她而起。',
+ s:['真性情，有话直说','护短，讲义气','行动力强，雷厉风行','有责任感，能守护家庭'],
+ b:['脾气急，容易说重话','有点记仇','太强势，有时让人有压力'],
+ work:'你适合需要魄力和执行力的工作，比如管理、销售、创业。你雷厉风行，但要学会控制情绪。',
+ love:'你对爱人非常忠诚，也希望对方同样专一。你需要一个能包容你脾气、懂你柔软的人。',
+ friend:'你是朋友圈里的“护卫”，谁欺负你的朋友就是跟你过不去。',
+ a:['生气的时候先别做决定','给别人一个解释的机会','学会温柔地表达关心'],
+ mate:'蜘蛛精。一个敢说，一个敢闹，闺蜜天花板。',rival:'玉面公主。她出现的那一刻，你们就注定是对手。'},
+{k:'ce',g:'f',camp:'tt',n:'嫦娥',v:[-1,-.5,0,-1],tag:'清冷优雅，自带距离感',
+ p:'你安静、优雅，有自己的节奏和审美，不爱凑热闹。你重视内心的平静，享受独处的时光。外人觉得你高冷难以接近，其实你只是把温柔留给了少数人。你情绪稳定，很少大起大落，在纷乱中也能保持从容。',
+ story:'嫦娥是月宫里的仙子，与玉兔为伴。原著里天蓬元帅就是因为醉酒冒犯嫦娥被贬下凡，成了猪八戒；后来在天竺国，也是嫦娥随太阴星君下界，把私逃的玉兔接回了月宫。',
+ s:['气质好，有品位','情绪稳定，从容淡定','独立，享受独处','审美在线，做事精致'],
+ b:['容易让人觉得难以接近','习惯一个人扛','太被动，错过很多机会'],
+ work:'你适合需要审美和专注的工作，比如设计、文字、艺术、研究。你能在安静的环境里做出精致的作品。',
+ love:'你在感情里慢热、含蓄，需要对方主动靠近。一旦认定，你会非常专一。',
+ friend:'你朋友不多，但都很交心。和你相处的人会觉得很舒服、很安静。',
+ a:['主动迈出第一步','偶尔让自己热闹一下','有需要的时候，开口求助'],
+ mate:'玉兔精。她的活泼刚好陪你解闷。',rival:'猪八戒。他当年那点糗事，你一直记得。'},
+{k:'qx',g:'f',camp:'tt',n:'七仙女',v:[1,0,1,-1],tag:'活泼合群，是大家的小太阳',
+ p:'你活泼开朗、温暖友善，是集体里的小太阳。你重视团队，喜欢和大家一起做事，守规矩、讲分寸，很少惹麻烦。你待人真诚，总能注意到别人的情绪，也愿意帮忙。你的善良让人喜欢，但有时也会因为太在乎别人而委屈自己。',
+ story:'原著里的七仙女是奉命去蟠桃园摘桃的七位仙女，穿着七种颜色的衣服。孙悟空偷吃蟠桃后，用定身法把她们定住，自己溜去搅了蟠桃会，七仙女算是大闹天宫的第一批目击者。',
+ s:['活泼开朗，温暖友善','团队意识强','守规矩，做事靠谱','善解人意，乐于助人'],
+ b:['太在乎别人的看法','不好意思拒绝','有时缺少主见，随大流'],
+ work:'你适合团队协作的工作，比如教育、行政、客服、活动执行。你是团队里最受欢迎的人，但也要学会表达自己的想法。',
+ love:'你在感情里温柔贴心，很会照顾对方。但别只顾着付出，也要让对方照顾你。',
+ friend:'你是朋友圈里人缘最好的那一个，谁都喜欢和你一起玩。',
+ a:['学会说“不”，照顾好自己','重要的事，听听自己的声音','不必让所有人都满意'],
+ mate:'杏仙。两个浪漫的人，凑在一起就是一首诗。',rival:'孙悟空。被他用定身法定住的那天，你记得清清楚楚。'},
+{k:'zz',g:'f',camp:'jg',n:'蜘蛛精',v:[1,0,0,1],tag:'姐妹成群，走到哪都是焦点',
+ p:'你社交能力超强，朋友多、点子多，走到哪里都能迅速打成一片。你喜欢热闹，也爱自由，不喜欢被规矩束缚。你和朋友之间有很强的默契，一起玩、一起闯、一起扛事。你活得潇洒，但有时也会三分钟热度。',
+ story:'原著里的蜘蛛精是盘丝洞的七个姐妹，她们在濯垢泉洗澡时遇见唐僧，用蛛丝把他捆回洞中。七姐妹同进同退，还有个师兄百眼魔君撑腰，是取经路上最团结的一群妖怪。',
+ s:['人缘好，社交能力强','会玩会生活','有感染力，带动气氛','重姐妹情义，团队意识强'],
+ b:['容易三分钟热度','有时太随性','太依赖圈子，独处时会不安'],
+ work:'你适合需要社交和创意的工作，比如新媒体、市场、活动、销售。你能迅速建立人脉，但要学会坚持做好一件事。',
+ love:'你在感情里热情主动，会制造很多快乐。但别只顾着玩，也要给对方安全感。',
+ friend:'你是朋友圈的核心人物，没有你组织，聚会就散了。',
+ a:['把热情留一点给长期目标','重要的事别只凭心情','偶尔一个人待着，听听自己的声音'],
+ mate:'铁扇公主。一起逛街吃饭，谁也别想欺负你们。',rival:'猪八戒。当年濯垢泉那件事，你们记他一辈子。'},
+{k:'yt',g:'f',camp:'jg',n:'玉兔精',v:[.5,1,.5,1],tag:'看着单纯可爱，其实主意很大',
+ p:'你活泼、直接、有点小任性，想到什么就去做。你的快乐很有感染力，身边的人都喜欢你。你看起来单纯，其实很有主见，认准的事谁劝都没用。你敢于追求自己想要的，哪怕要打破规矩。',
+ story:'原著里的玉兔精是月宫里捣药的玉兔，私自下凡到天竺国，把真公主抛到野外，自己假扮公主，还要招唐僧做驸马。被孙悟空识破后，最后被嫦娥接回了月宫。',
+ s:['活泼可爱，有感染力','真诚直接，不绕弯子','行动力强，敢想敢做','有主见，不随波逐流'],
+ b:['容易冲动','不太考虑后果','有点任性，不爱被管'],
+ work:'你适合充满活力的工作，比如新媒体、短视频、活动策划、销售。你很能带动气氛，但要学会做长期规划。',
+ love:'你在感情里热情直接，喜欢就会说出来。你需要一个能包容你小任性、也能给你方向的人。',
+ friend:'你是朋友圈的开心果，和你在一起永远不会无聊。',
+ a:['做决定前多问一个人','学会为自己的选择负责','冲动之后，记得收场'],
+ mate:'嫦娥。她的沉稳能帮你兜底。',rival:'白骨精。你的心思全写在脸上，她的心思你一点也猜不透。'},
+{k:'xz',g:'f',camp:'jg',n:'蝎子精',v:[-1,1,-1,.5],tag:'独来独往，狠起来谁都怕',
+ p:'你独立、果断、不好惹。你不喜欢热闹，也不需要别人陪，一个人就能把事情办妥。你气场强、有实力，做事干脆利落，从不拖泥带水。你的锋芒让人敬畏，也让人不敢轻易靠近。',
+ story:'原著里的蝎子精住在毒敌山琵琶洞，尾巴上的倒马毒桩厉害得很，连孙悟空和猪八戒都被她蜇得疼痛难忍，最后是昴日星官现出本相才降住了她。',
+ s:['独立果断，不依赖别人','实力强，气场足','做事干脆利落','抗压能力极强'],
+ b:['太锋利，容易伤到别人','不轻易信任别人','太独，有时孤立无援'],
+ work:'你适合需要魄力和专业的工作，比如律师、外科医生、投资、高管。你能独当一面，但别把所有人都挡在门外。',
+ love:'你在感情里很强势，也很专一。你需要一个足够强大、能和你并肩的人。',
+ friend:'你朋友很少，但每一个都是经过考验的。你对朋友的忠诚度极高。',
+ a:['收一收锋芒，给别人靠近你的机会','学会信任身边的人','偶尔示弱，不代表你输了'],
+ mate:'白骨精。两个清醒的人，惺惺相惜。',rival:'女儿国国王。你太强势，和她的温柔水火不容。'},
+{k:'xx',g:'f',camp:'jg',n:'杏仙',v:[.5,-.5,1,.5],tag:'温柔浪漫，有才情的文艺派',
+ p:'你温柔、浪漫，有才情也有情调。你喜欢诗词、音乐、美食和一切美好的东西，懂得生活的情趣。你重感情，敢于表达心意，不怕被拒绝。你的温柔让人如沐春风，但也容易沉浸在自己的情绪里。',
+ story:'原著里的杏仙是木仙庵里的杏树精。唐僧被几位树精请去吟诗作对，杏仙对他一见倾心，主动表达爱意。她不害人，只是爱得大胆，是取经路上最浪漫的一段小插曲。',
+ s:['有才情，有审美','温柔浪漫，懂生活','敢于表达心意','共情力强，懂别人的情绪'],
+ b:['容易情绪化','太理想主义','有时沉浸在自己的世界里'],
+ work:'你适合需要创意和审美的工作，比如文案、设计、艺术、内容创作。你的作品总带着温度。',
+ love:'你是恋爱中的浪漫主义者，喜欢就会勇敢表白。你需要一个懂你情调、也愿意回应你的人。',
+ friend:'朋友觉得你温柔有趣，是最会分享美好事物的那一个。',
+ a:['别让情绪替你做决定','理想之外，也要脚踏实地','被拒绝不可怕，你值得更好的'],
+ mate:'七仙女。两个浪漫的人，凑在一起就是一首诗。',rival:'白骨精。你太真诚，她太会算计，你们是两种人。'},
+{k:'ym',g:'f',camp:'jg',n:'玉面公主',v:[.5,-.5,.5,0],tag:'娇俏聪明，懂得为自己选择',
+ p:'你聪明、有魅力，懂得欣赏自己，也懂得为自己的生活做选择。你重视生活品质，喜欢美好的事物，也知道该和什么样的人在一起。你看起来娇柔，其实心里很清楚自己要什么。',
+ story:'原著里的玉面公主是积雷山摩云洞万岁狐王的女儿，狐王去世后留下百万家私。她招牛魔王上门，过着富足的日子。孙悟空找上门时，她转头就去找牛魔王撑腰。',
+ s:['有魅力，懂得展示自己','聪明，知道自己要什么','重视生活品质','善于借力，懂得合作'],
+ b:['有时太依赖别人','遇到危机容易慌','太在意外界的评价'],
+ work:'你适合需要形象和沟通的工作，比如品牌、公关、时尚、商务。你懂得借力，但也要培养自己的硬实力。',
+ love:'你清楚自己想要什么样的伴侣，会主动选择。但要记住，最好的安全感来自自己。',
+ friend:'朋友觉得你精致、有品位，常找你请教穿搭和生活技巧。',
+ a:['培养一项只属于自己的本事','遇事先冷静，别急着找人帮忙','少在意别人怎么说'],
+ mate:'杏仙。你们都爱美好的事物，聊得最投缘。',rival:'铁扇公主。你出现的那一刻，你们就注定是对手。'}
+];
+const XY_DIMS=[['热闹','安静'],['行动','谋略'],['重情','理智'],['不羁','守序']];
+// 每个选项：[文字, [热闹, 行动, 重情, 不羁]]
+const XY_QS=[
+ ['周末突然空出一整天，你会？',[['约一大帮朋友出去玩',[1,0,0,0]],['一个人待着，看书追剧',[-1,0,0,0]],['临时起意，说走就走',[0,1,0,.5]],['先把下周的事安排好',[0,-1,0,-1]]]],
+ ['朋友哭着给你打电话，你会？',[['马上赶过去陪他',[0,1,1,0]],['先帮他分析问题出在哪',[0,0,-1,0]],['陪他一起骂惹他的人',[0,0,1,.5]],['安静听他说完',[-1,0,.5,0]]]],
+ ['遇到不公平的规定，你会？',[['当场怼回去',[0,1,0,1]],['表面服从，私下想办法绕过去',[0,-1,0,1]],['按程序向上反映',[0,0,0,-1]],['算了，规矩就是规矩',[0,-.5,0,-1]]]],
+ ['在一群陌生人中间，你通常？',[['很快成为焦点',[1,0,0,0]],['找一个人深聊',[-.5,0,.5,0]],['安静观察每个人',[-1,-1,0,0]],['看谁不顺眼就离远点',[-.5,0,0,.5]]]],
+ ['做重要决定时，你更相信？',[['直觉，想到就做',[0,1,0,0]],['反复权衡利弊',[0,-1,-.5,0]],['自己内心的感受',[0,0,1,0]],['长辈的经验和规矩',[0,0,0,-1]]]],
+ ['被人误会了，你会？',[['立刻解释清楚',[.5,1,0,0]],['懒得解释，懂我的人自然懂',[-1,0,0,.5]],['难过好几天，缓不过来',[0,0,1,0]],['用实际行动证明自己',[0,.5,-.5,0]]]],
+ ['你理想中的生活是？',[['热热闹闹，朋友成群',[1,0,.5,0]],['自由自在，没人管我',[0,0,0,1]],['安稳平静，岁月静好',[0,-1,0,-1]],['轰轰烈烈，干一番大事',[.5,1,0,0]]]],
+ ['你最讨厌哪种人？',[['磨磨唧唧的',[0,1,0,0]],['冷血无情的',[0,0,1,0]],['没规没矩的',[0,0,0,-1]],['爱管闲事的',[-.5,0,0,1]]]],
+ ['吵架的时候，你通常？',[['嗓门比谁都大',[1,1,0,0]],['冷战，不理人',[-1,0,0,0]],['讲道理，摆事实',[0,0,-1,0]],['先心软的那个',[0,0,1,0]]]],
+ ['意外得到一笔钱，你会？',[['请朋友大吃一顿',[1,0,.5,0]],['存起来以后用',[0,-1,0,-1]],['买个一直想要的东西奖励自己',[0,.5,0,.5]],['留给家人',[0,0,1,-.5]]]],
+ ['你觉得自己最大的武器是？',[['实力',[0,1,0,0]],['脑子',[0,-1,-1,0]],['人缘',[1,0,0,0]],['真心',[0,0,1,0]]]],
+ ['被人当众挑衅，你会？',[['当场还回去',[0,1,0,1]],['记在心里，以后再说',[-1,-1,0,0]],['一笑而过，不跟他计较',[0,0,0,-1]],['叫上朋友一起出头',[1,0,0,0]]]],
+ ['你更喜欢哪种夜晚？',[['热闹的烧烤摊',[1,0,0,0]],['安静的月光下',[-1,0,.5,0]],['熬夜干自己喜欢的事',[0,.5,0,.5]],['早早睡觉',[0,0,0,-1]]]],
+ ['朋友求你帮忙，但这事有点违反规定？',[['朋友的事就是我的事，帮',[0,0,1,1]],['不行，原则不能破',[0,0,0,-1]],['看情况，值得才帮',[0,0,-1,0]],['帮，但不让别人知道',[0,-1,0,.5]]]],
+ ['你最看重什么？',[['自由',[0,0,0,1]],['感情',[0,0,1,0]],['成就',[0,1,0,0]],['安稳',[0,-1,0,-1]]]],
+ ['你更喜欢哪种做事方式？',[['一个人闷头干',[-1,0,0,0]],['带着一帮人一起冲',[1,.5,0,0]],['先谋划好再动手',[0,-1,0,0]],['走一步看一步',[0,.5,0,.5]]]],
+ ['别人对你特别好，你会？',[['加倍对他好',[0,0,1,0]],['先想想他图什么',[0,-.5,-1,0]],['记在心里，有机会再还',[-.5,0,.5,0]],['挺开心，但不会想太多',[.5,0,-.5,0]]]],
+ ['对你来说，规矩是？',[['用来打破的',[0,0,0,1]],['必须遵守的',[0,0,0,-1]],['看情况，有用就守',[0,0,-.5,0]],['我自己定的才算',[0,.5,0,.5]]]],
+ ['遇到比你厉害的人，你会？',[['不服，要比一比',[0,1,0,.5]],['虚心请教',[0,0,0,-1]],['跟他搞好关系',[1,0,0,0]],['默默努力超过他',[-1,0,0,0]]]],
+ ['你的房间通常是？',[['乱，但我知道东西在哪',[0,0,0,.5]],['整整齐齐',[0,-.5,0,-1]],['堆满了零食和小玩意',[.5,0,.5,0]],['东西很少，都是精挑细选的',[-.5,0,-.5,0]]]],
+ ['如果能拥有一种能力，你想要？',[['力大无穷',[0,1,0,0]],['看穿人心',[0,-1,-1,0]],['让所有人都喜欢你',[1,0,.5,0]],['想去哪就去哪',[0,0,0,1]]]],
+ ['失败之后，你通常？',[['马上再来一次',[0,1,0,0]],['复盘，找原因',[0,-1,-1,0]],['找朋友吐槽一顿',[1,0,.5,0]],['一个人慢慢消化',[-1,0,0,0]]]],
+ ['团队里出现了分歧，你会？',[['坚持我的方案',[0,.5,0,.5]],['找个大家都能接受的办法',[0,-.5,.5,-.5]],['听领头的',[0,0,0,-1]],['懒得争，各干各的',[-1,0,-.5,0]]]],
+ ['你希望别人怎么记住你？',[['一个厉害的人',[0,1,0,0]],['一个靠谱的人',[0,0,0,-1]],['一个有趣的人',[1,0,0,0]],['一个温暖的人',[0,0,1,0]]]]
+];
+let XY_BIAS={};
+
+const XY_DIV=3.5;
+XY_BIAS={"wk":-0.066,"ts":0.106,"bj":0.534,"ss":0.134,"bl":0.301,"el":-0.42,"nz":0.336,"tb":0.199,"nm":0.434,"hh":-0.52,"jj":-0.321,"yj":-0.572,"hf":-0.419,"hx":0.276,"bg":-0.673,"nr":-0.039,"tf":0.335,"ce":0.097,"qx":0.126,"zz":-0.159,"yt":0.341,"xz":-0.278,"xx":0.066,"ym":0.183};
+
+/* ---------- 付费测试：题目、类型、报告 ---------- */
+const LIKERT=[['非常符合',2],['比较符合',1],['说不清',0],['不太符合',-1],['很不符合',-2]];
+const H={
+  p:t=>`<p>${t}</p>`,
+  ul:l=>`<ul>${l.map(x=>`<li>${x}</li>`).join('')}</ul>`,
+  chips:l=>`<div class="chips">${l.map(x=>`<span>${x}</span>`).join('')}</div>`,
+  bars:l=>`<div class="bars">${l.map(b=>`<div class="bar"><span>${b[0]}</span><span class="t"><i style="width:${b[1]}%"></i></span><span class="n">${b[1]}%</span></div>`).join('')}</div>`,
+  duo:l=>`<div class="duos">${l.map(d=>`<div class="duo"><div class="ends"><span>${d[0]}</span><span>${d[2]}</span></div><div class="track"><i style="left:${d[1]}%"></i></div><div class="ends n"><span>${d[1]}%</span><span>${100-d[1]}%</span></div></div>`).join('')}</div>`,
+  pairs:l=>l.map(x=>{const i=x.indexOf('：');return `<p class="pair"><b>${x.slice(0,i)}</b>${x.slice(i+1)}</p>`}).join('')
+};
+const pct=(sum,n)=>Math.round(Math.max(0,Math.min(100,50+50*sum/(2*n))));
+function tally(items,ans){const s={},n={};items.forEach((it,i)=>{const [_,k,dir=1]=it;s[k]=(s[k]||0)+ans[i]*dir;n[k]=(n[k]||0)+1});return {s,n}}
+function interleave(groups){const out=[];const m=Math.max(...groups.map(g=>g.length));for(let i=0;i<m;i++)groups.forEach(g=>{if(g[i])out.push(g[i])});return out}
+
+/* ===== 职业倾向 ===== */
+const JOB_T={
+ sg:{n:'动手实干型',tag:'看得见、摸得着的成果，最让你踏实',keys:['务实','动手能力强','踏实','独立','重结果'],
+  p:'你是一个务实、脚踏实地的人。比起空谈理论，你更相信亲手做出来的东西。你喜欢和设备、工具、材料打交道，看着一台机器在你手里修好、一件东西在你手里成形，会让你特别有成就感。你不太喜欢长时间开会、写报告，也不擅长在人群里表现自己，但交给你的具体任务，你总能扎扎实实完成。你是团队里最让人放心的执行者，很多“只有你能搞定”的问题，最后都落在你手上。',
+  s:['动手能力强，能把想法变成实物','解决实际问题的能力突出','踏实可靠，交给你的事不用操心','抗压，能适应艰苦的工作环境','对技术和设备有天然的悟性'],
+  b:['不擅长表达，成果容易被别人抢功','对抽象理论和长期规划兴趣不大','不太喜欢和人打交道，社交场合会不自在','有时太固执于自己的方法'],
+  env:'有明确任务、能动手实操的环境，比如工厂、车间、工地、实验室、户外现场。规则清楚，不需要太多人际周旋。',
+  jobs:['设备工程师','机电维修技师','汽车维修与改装','电工和弱电工程','数控与机械加工','现场技术支持','设备类技术销售','新能源设备运维','装修施工管理','厨师或烘焙师'],
+  path:'先在一个技术方向上扎深，考取相关证书，比如电工证、技师证；积累几年经验后，可以往技术主管、项目经理或技术型销售发展，收入上限会明显提高。',
+  a:['学会把你的工作成果讲清楚、写下来','每年学一项新技术，别被行业淘汰','多和人交流，懂技术又会沟通的人最稀缺','关注新能源、智能制造等新兴方向'],
+  bad:'需要大量社交、频繁开会、规则模糊的工作'},
+ yj:{n:'研究探索型',tag:'凡事都想弄明白为什么',keys:['好奇','逻辑强','独立思考','专注','爱钻研'],
+  p:'你有一颗停不下来的好奇心。别人看到现象，你想知道原理；别人接受结论，你要自己查证。你喜欢分析数据、研究问题、阅读资料，能独自专注很长时间，享受“想通了”的那一刻。你思维严谨，不轻易相信别人的说法，更看重证据和逻辑。你不太在乎热闹和名利，但很在乎工作有没有挑战、能不能学到真本事。',
+  s:['逻辑清晰，分析能力强','学习能力强，能快速掌握新知识','专注，能独立解决复杂问题','不盲从，有自己的判断','擅长发现别人忽略的规律'],
+  b:['想得多、做得少，容易陷入完美主义','不太爱社交，团队合作时偏被动','对重复性工作缺乏耐心','有时把简单的事想得太复杂'],
+  env:'安静、能专注、鼓励探索和独立思考的环境，比如研发部门、实验室、数据团队、高校和研究机构。',
+  jobs:['数据分析师','软件工程师','研发工程师','工艺与质量工程师','技术型产品经理','医学和药学相关','金融分析与风控','市场研究','半导体与材料研发','大学教师或研究员'],
+  path:'先夯实一个专业领域的硬功夫，再学会用简单的话讲清楚复杂的事。懂技术又会表达，可以往技术专家、架构师或研发管理发展。',
+  a:['给自己定截止时间，逼自己先交出结果','练习把复杂的东西讲给外行听','主动参与团队讨论，别只做幕后','选一个能长期深耕的方向，持续积累'],
+  bad:'纯重复、不需要动脑、或者只靠人情关系的工作'},
+ cy:{n:'创意表达型',tag:'讨厌一成不变，脑子里总有新点子',keys:['创意','审美','自由','敏感','爱表达'],
+  p:'你是一个想象力丰富、感受力敏锐的人。你对美很敏感，颜色、声音、文字、画面都能触动你。你讨厌一成不变，总想尝试新的方式，脑子里时不时冒出别人想不到的点子。你需要表达自己，不管是用文字、画面还是视频。在条条框框太多的环境里，你会觉得憋屈；但只要给你空间，你就能做出让人眼前一亮的作品。',
+  s:['点子多，有创造力','审美好，对细节有感觉','表达能力强，善于讲故事','能跳出常规，找到新的解决办法','对潮流和情绪很敏感'],
+  b:['受不了重复和死板的工作','想法多，执行和落地容易跟不上','情绪化，状态起伏大','不太喜欢被管束和评价'],
+  env:'自由度高、鼓励创新、氛围轻松的环境，比如设计公司、新媒体、广告公司、内容团队、工作室。',
+  jobs:['平面或界面设计师','短视频编导与剪辑','新媒体运营','文案策划','品牌与广告创意','摄影师','室内设计师','游戏策划','活动策划','自由插画师'],
+  path:'持续积累作品集，作品就是你最好的简历。几年后可以往创意总监、独立工作室或个人品牌方向发展。',
+  a:['找一个执行力强的搭档，帮你把想法落地','给自己定交付时间，别等灵感','学一点商业知识，让创意能变现','把作品持续发到网上，积累影响力'],
+  bad:'规则僵化、重复枯燥、只看流程不看结果的工作'},
+ zr:{n:'助人服务型',tag:'帮到别人，比赚到钱更让你开心',keys:['共情','耐心','善良','会沟通','有责任心'],
+  p:'你是一个温暖、有同理心的人。你很容易察觉别人的情绪，朋友有心事时总会第一个想到你。帮助别人、看着别人因为你变得更好，会让你获得巨大的满足感。你耐心、善于倾听，也很会照顾人。你看重的不只是收入，更是工作有没有意义、能不能帮到人。',
+  s:['共情能力强，能理解别人的感受','沟通耐心，善于倾听','让人信任，容易建立关系','有责任心，愿意付出','擅长调和团队氛围'],
+  b:['不好意思拒绝，容易被占便宜','太在意别人的评价','容易情绪消耗，累了也不说','面对冲突时容易退让'],
+  env:'以人为中心、氛围友善、重视合作的环境，比如学校、医院、培训机构、人力资源部门、公益组织。',
+  jobs:['教师或培训师','心理咨询相关','护士和康复治疗','人力资源','客户成功经理','社工和公益','幼教和早教','健身教练','服务型销售顾问','导游和旅游顾问'],
+  path:'把“会帮人”变成专业能力，考取相关资格证，比如教师资格证、人力资源管理师；之后可以往培训管理、团队管理或个人咨询方向发展。',
+  a:['学会说“不”，给自己设好边界','照顾好自己的情绪，别只顾别人','学一些专业方法，让帮助更有效','把你的付出量化，让领导看见'],
+  bad:'冷冰冰、只看数字、竞争残酷、不关心人的工作'},
+ kt:{n:'开拓影响型',tag:'喜欢搞定人，也喜欢搞定事',keys:['自信','有说服力','目标导向','敢冒险','领导力'],
+  p:'你目标感强、有野心，喜欢挑战，也喜欢赢。你善于说服别人、影响别人，在谈判、销售、带团队这些事上天生有优势。你敢冒险，看到机会就想抓住；你不怕压力，越有挑战越来劲。你希望自己的努力能换来看得见的回报，不管是收入、职位还是影响力。',
+  s:['说服力强，善于谈判和销售','抗压能力强，越难越兴奋','目标感强，执行果断','有领导力，能带动别人','对机会和资源很敏感'],
+  b:['容易急于求成，忽视细节','有时太强势，不太听得进意见','对枯燥、重复的工作没耐心','容易冒进，低估风险'],
+  env:'有竞争、有激励、能快速看到回报的环境，比如销售团队、创业公司、市场部、商务拓展部门。',
+  jobs:['销售和大客户经理','商务拓展','创业者','市场营销','招商和渠道管理','房产或金融销售','主播和带货','项目经理','管理培训生','诉讼律师'],
+  path:'先在一线做出业绩，积累客户和人脉；再往团队管理、区域负责人或自主创业发展。你的收入上限，往往取决于你能带多大的团队、管多大的盘子。',
+  a:['身边放一个细心的人，帮你把关细节','冒险之前先想好退路','把成功经验总结成方法，复制给团队','多倾听，强势之外也要有温度'],
+  bad:'按部就班、没有晋升空间、收入固定不变的工作'},
+ gf:{n:'规范执行型',tag:'有条理、守规矩，交给你最放心',keys:['细心','有条理','稳定','守规则','可靠'],
+  p:'你细心、严谨、有条理，做事喜欢按计划、按流程来。你对数字和细节很敏感，很少出错。你喜欢清晰的规则和明确的职责，在一个有秩序的环境里，你能把工作做得又快又好。你可能不是团队里最耀眼的那一个，但一定是最不能缺的那一个，因为所有事情最终都要有人把关、落地。',
+  s:['细致认真，出错率低','有条理，善于整理和规划','稳定可靠，执行力强','遵守规则，值得信赖','擅长处理数据和流程'],
+  b:['不太适应频繁变化','不爱冒险，容易错过机会','有时太拘泥于规则','创新和临场应变偏弱'],
+  env:'规则清楚、流程规范、稳定有序的环境，比如财务部门、银行、政府机关、大型企业的行政和运营部门。',
+  jobs:['会计和财务','审计','银行柜员和信贷','行政和文秘','人事专员','供应链和采购','质量管理','统计和数据管理','法务助理','执行型项目管理'],
+  path:'考取专业证书，比如初级会计、中级会计、注册会计师，在一个领域不断深耕；之后可以往财务经理、运营主管、风控管理发展，稳中求进。',
+  a:['主动接一点新挑战，扩大舒适区','学会用工具和自动化提高效率','适当表达自己的想法，别只做执行','关注行业变化，提前储备新技能'],
+  bad:'规则混乱、经常变动、需要大量临场发挥的工作'}
+};
+const JOB_OPP={sg:'zr',zr:'sg',yj:'kt',kt:'yj',cy:'gf',gf:'cy'};
+const JOB_ITEMS=interleave([
+ [['我喜欢动手修理或组装东西','sg'],['比起坐办公室，我更愿意在现场干活','sg'],['我对机器、设备、工具的原理很感兴趣','sg'],['我更喜欢能看到实实在在成果的工作','sg'],['做手工或体力活让我觉得踏实','sg']],
+ [['遇到问题，我喜欢追根究底弄清原因','yj'],['我喜欢分析数据、找规律','yj'],['我愿意花很长时间钻研一个难题','yj'],['我对科学、技术类的知识很感兴趣','yj'],['比起听别人说，我更相信自己查证的结论','yj']],
+ [['我经常有新奇的想法和点子','cy'],['我对颜色、设计、美感很敏感','cy'],['重复固定的工作会让我很难受','cy'],['我喜欢用文字、图片或视频表达自己','cy'],['我希望工作能让我自由发挥','cy']],
+ [['帮助别人解决困难让我很有成就感','zr'],['朋友有烦恼时，经常找我倾诉','zr'],['我很容易察觉别人的情绪变化','zr'],['我喜欢教别人东西','zr'],['我更愿意做和人打交道、能帮到人的工作','zr']],
+ [['我喜欢说服别人接受我的观点','kt'],['为了更大的回报，我愿意承担风险','kt'],['在团队里，我常常主动站出来带头','kt'],['谈判、销售、拉资源这类事我比较擅长','kt'],['我希望将来能当领导或者自己创业','kt']],
+ [['我做事喜欢按计划、按流程来','gf'],['我对数字和细节很敏感，很少出错','gf'],['我喜欢把东西整理得井井有条','gf'],['我更喜欢规则清楚、职责明确的工作','gf'],['比起高风险高回报，稳定的工作更适合我','gf']]
+]);
+function jobAnalyze(ans){
+  const {s,n}=tally(JOB_ITEMS,ans);const ks=Object.keys(JOB_T);
+  const strong={};JOB_ITEMS.forEach((it,i)=>{if(ans[i]===2)strong[it[1]]=(strong[it[1]]||0)+1});
+  const order=[...ks].sort((a,b)=>s[b]-s[a]||(strong[b]||0)-(strong[a]||0)||ks.indexOf(a)-ks.indexOf(b));
+  const T=JOB_T[order[0]],U=JOB_T[order[1]],O=JOB_T[JOB_OPP[order[0]]];
+  return {n:T.n,tag:T.tag,free:`你的职业兴趣以「${T.n}」为主，「${U.n}」为辅`,
+   sections:[
+    ['你的职业画像',H.p(T.p)],
+    ['你的关键词',H.chips(T.keys)],
+    ['六种职业兴趣分布',H.bars(order.map(k=>[JOB_T[k].n,pct(s[k],n[k])]))],
+    ['你的辅助类型：'+U.n,H.p(`你的职业兴趣以「${T.n}」为主、「${U.n}」为辅。除了${T.keys[0]}、${T.keys[1]}的一面，你身上也有${U.keys[0]}、${U.keys[1]}的特质。选工作时，能同时用上这两种特质的岗位，最容易让你干得开心、干出成绩。`)],
+    ['你的优势',H.ul(T.s)],['需要注意',H.ul(T.b)],
+    ['理想的工作环境',H.p(T.env)],
+    ['最适合你的职业',H.chips([...T.jobs.slice(0,8),...U.jobs.slice(0,3)])],
+    ['不太适合你的工作',H.p(`${T.bad}。这类工作更偏向「${O.n}」，和你的兴趣差别最大，做起来容易消耗自己。`)],
+    ['职业发展路径',H.p(T.path)],
+    ['给你的成长建议',H.ul(T.a)]
+   ]};
+}
+
+/* ===== 恋爱类型 ===== */
+const LOVE_T={
+ aq:{n:'安心依靠型',tag:'爱得踏实，也让人安心',keys:['有安全感','信任','坦诚','稳定','会沟通'],
+  p:'你在感情里是一个让人很安心的人。你相信对方，也相信自己值得被爱，所以不会因为一条没回的消息胡思乱想，也不会因为对方需要空间而不安。你能坦然表达自己的需要，也愿意倾听对方的感受。吵架时你想的是怎么解决问题，而不是怎么赢。你能享受两个人的亲密，也能享受一个人的自在。这种稳定，是一段好感情最珍贵的地基。',
+  inLove:'你会大方地表达喜欢，也能接受对方不同的表达方式。你不玩欲擒故纵，不搞冷战，有问题就摊开来说。你给对方信任和自由，对方在你身边会觉得很轻松。',
+  s:['信任伴侣，不疑神疑鬼','能坦诚沟通，有问题就解决','情绪稳定，不轻易被小事影响','能给对方空间，也能给对方陪伴'],
+  b:['有时太理所当然，忽略了对方的不安','遇到敏感的伴侣，可能觉得对方“想太多”','太理性，偶尔少了点浪漫','容易高估对方的沟通能力'],
+  need:'一个同样真诚、愿意沟通的人。你不怕对方有小情绪，只怕对方什么都不说。',
+  with:['和安心依靠型：最理想的组合，彼此信任，一起成长','和患得患失型：你的稳定能慢慢给对方安全感，但要多一点耐心和回应','和独立慢热型：你能尊重对方的空间，关系会越来越近','和忽冷忽热型：需要最多的耐心，你的坚定正是对方最需要的'],
+  a:['偶尔主动制造一点仪式感','多问问对方“你现在感觉怎么样”','理解每个人表达爱的方式不一样','保持你的坦诚，这是你最大的魅力']},
+ jl:{n:'患得患失型',tag:'太在乎你，所以总怕失去你',keys:['深情','敏感','投入','渴望陪伴','怕失去'],
+  p:'你是一个爱得很深、很投入的人。一旦喜欢上一个人，你的心思几乎全在对方身上。你渴望亲密，希望对方经常陪你、回应你、告诉你他爱你。但也因为太在乎，你很容易患得患失：消息回得慢了，你会胡思乱想；对方语气冷淡一点，你会担心是不是自己做错了什么。你不是作，只是太害怕失去。',
+  inLove:'你会主动付出，记得对方的每一个喜好，愿意为对方改变自己。但当你感到不安时，可能会反复确认、查岗，或者用生气来试探对方是不是还在乎你。',
+  s:['深情专一，对感情非常投入','感受力强，能察觉对方细微的变化','愿意付出，很会照顾人','重视关系，不轻言放弃'],
+  b:['容易胡思乱想，给自己和对方压力','太需要确认，可能让对方觉得被盯着','情绪起伏大，一点小事能影响一整天','容易为了对方失去自我'],
+  need:'一个回应及时、愿意表达爱、能给你稳定感的人。对方不需要多浪漫，但要靠谱、说到做到。',
+  with:['和安心依靠型：最适合你的组合，对方的稳定能慢慢抚平你的不安','和患得患失型：两个人都很投入，但不安会互相放大，需要一起学着安抚彼此','和独立慢热型：最容易陷入“你追他逃”的循环，要特别注意沟通方式','和忽冷忽热型：关系会像坐过山车，需要双方都有意识地调整'],
+  a:['不安的时候先问问自己：有证据吗，还是我在想象','把需要直接说出来，比如“我希望你睡前给我发个消息”','培养自己的爱好和朋友圈，别把全部重心放在对方身上','记住：你值得被爱，不需要靠讨好来换']},
+ dl:{n:'独立慢热型',tag:'爱你，但我需要自己的空间',keys:['独立','理性','慢热','重视空间','自给自足'],
+  p:'你是一个独立、理性的人，习惯自己解决问题，不太喜欢依赖别人，也不喜欢被别人依赖。在感情里，你需要一定的个人空间，太黏的关系会让你有压力。你不太习惯表达脆弱，难过的时候宁愿一个人消化。你不是不爱，只是爱得比较安静、比较慢。一旦认定了一个人，你会用自己的方式默默对他好。',
+  inLove:'你尊重对方的生活，也希望对方尊重你的。你不爱天天腻在一起，更享受各自忙完后的相聚。当关系变得太紧密时，你可能会下意识地后退一步，让对方误以为你变冷淡了。',
+  s:['独立，不会过度依赖对方','理性冷静，不容易情绪化','尊重对方的空间和隐私','遇事能自己扛，让对方少操心'],
+  b:['不习惯表达情感，容易让对方没安全感','关系越近越想后退，让对方困惑','遇到矛盾倾向于回避，而不是沟通','不愿意示弱，再累也自己扛'],
+  need:'一个同样独立、懂得给你空间、不会过度黏人的人。最好对方情绪稳定，有自己的生活重心。',
+  with:['和安心依靠型：对方的耐心和尊重，能让你慢慢愿意打开自己','和患得患失型：最容易陷入“他追你逃”的循环，你需要多一点主动回应','和独立慢热型：相处轻松，但可能太疏远，需要刻意创造亲密时刻','和忽冷忽热型：双方都容易后退，需要有人先迈出一步'],
+  a:['试着每天主动分享一件小事','想后退的时候，告诉对方“我需要一点时间，不是不爱你”','学会示弱，让对方有机会照顾你','矛盾出现时先别躲，试着说出你的感受']},
+ hl:{n:'忽冷忽热型',tag:'想靠近你，又怕靠得太近',keys:['敏感','矛盾','深情','自我保护','渴望被理解'],
+  p:'你的内心很复杂：你渴望被爱、渴望亲密，但当对方真的靠近时，你又会害怕、想要逃开。你担心被抛弃，也担心在关系里受伤，所以常常一边付出、一边防备。别人可能觉得你忽冷忽热、难以捉摸，其实你只是太想保护自己。你的感情很深，只是需要一个足够有耐心的人，让你相信爱是安全的。',
+  inLove:'关系刚开始时，你可能很投入；一旦感到不安，你又会突然冷下来，甚至主动推开对方。冲突时你可能选择沉默或逃避，事后又会后悔。',
+  s:['感情深刻，一旦信任会全心投入','敏感细腻，能理解别人的难处','有很强的自我保护意识','经历过的事让你更懂得珍惜'],
+  b:['情绪反复，让对方无所适从','害怕受伤，可能先推开对方','遇到冲突容易逃避或冷战','内心戏多，常常想到最坏的结果'],
+  need:'一个特别有耐心、情绪稳定、说到做到的人。对方不需要多浪漫，但要让你感到“无论如何他都在”。',
+  with:['和安心依靠型：最能帮到你的组合，对方的坚定能让你慢慢放下防备','和患得患失型：两个人都容易不安，需要很多沟通和确认','和独立慢热型：双方都容易后退，关系可能停滞不前','和忽冷忽热型：能理解彼此，但关系波动会很大'],
+  a:['想推开对方的时候，先停一停，问问自己在怕什么','把感受写下来，比在情绪里做决定更好','给关系一点时间，安全感是慢慢建立的','如果长期被情绪困扰，可以找专业的心理咨询师聊聊']}
+};
+const LOVE_EX={
+ wd:{n:'甜言蜜语',p:'对你来说，爱要说出来。一句“你真棒”“我想你了”，就能让你开心一整天；而冷冰冰的批评，会比别人更伤你。',tip:'告诉对方：多夸夸我，有话好好说。'},
+ pb:{n:'专心陪伴',p:'你最看重两个人专心在一起的时间。不用多贵的约会，放下手机好好聊天、一起散步，就能让你觉得被爱。最伤你的是“人在心不在”。',tip:'告诉对方：陪我的时候，把手机放下。'},
+ lw:{n:'用心礼物',p:'礼物对你来说不在于贵不贵，而在于“他记得我”。一张手写卡片、一件你随口提过的小东西，都能让你感动很久。',tip:'告诉对方：不用贵，记得我说过的话就好。'},
+ xd:{n:'实际行动',p:'比起甜言蜜语，你更相信行动。帮你拿快递、做顿饭、生病时照顾你，这些比一百句“我爱你”更打动你。',tip:'告诉对方：比起说，我更想看你怎么做。'},
+ cp:{n:'亲密接触',p:'牵手、拥抱、靠在一起，是你感受爱最直接的方式。一个拥抱能让你瞬间安心，长时间的疏远会让你觉得关系变淡了。',tip:'告诉对方：难过的时候，抱抱我就好。'}
+};
+const LOVE_ITEMS=interleave([
+ [['我常常担心对方没有那么喜欢我','anx',1],['对方回消息慢了，我会胡思乱想','anx',1],['我需要对方经常说爱我，才觉得安心','anx',1],['我很害怕被抛弃','anx',1],['我很少担心对方会离开我','anx',-1],['吵架后我会特别害怕关系就此结束','anx',1],['我对这段感情很有安全感','anx',-1],['我会很在意对方和异性的来往','anx',1]],
+ [['和对方太亲密时，我会想要一点距离','avo',1],['我不太习惯向对方表达自己的脆弱','avo',1],['遇到困难，我更想自己扛，不想麻烦对方','avo',1],['我很容易和对方分享心里话','avo',-1],['对方太黏人会让我有压力','avo',1],['我愿意依赖对方','avo',-1],['感情稳定后，我反而会想退一步','avo',1],['两个人亲密无间，对我来说很自然','avo',-1]],
+ [['对方的一句夸奖能让我开心一整天','wd'],['我最看重两个人一起度过的时间','pb'],['收到用心准备的礼物，我会特别感动','lw'],['对方帮我做事，比说好听的话更让我感动','xd'],['牵手、拥抱让我觉得被爱','cp'],['我经常用语言表达对对方的喜欢','wd'],['对方放下手机专心陪我，比什么都重要','pb'],['我喜欢给对方挑礼物','lw'],['我习惯用实际行动照顾对方','xd'],['我喜欢和对方靠在一起','cp']]
+]);
+function loveAnalyze(ans){
+  const {s,n}=tally(LOVE_ITEMS,ans);
+  const ax=s.anx>0,av=s.avo>0;const k=ax?(av?'hl':'jl'):(av?'dl':'aq');const T=LOVE_T[k];
+  const ex=['wd','pb','lw','xd','cp'].sort((a,b)=>s[b]-s[a]);const E1=LOVE_EX[ex[0]],E2=LOVE_EX[ex[1]];
+  return {n:T.n,tag:T.tag,free:`你最容易被「${E1.n}」打动`,
+   sections:[
+    ['你的恋爱画像',H.p(T.p)],
+    ['你的关键词',H.chips(T.keys)],
+    ['你的恋爱维度',H.duo([['担心失去',pct(s.anx,n.anx),'安全感足'],['需要空间',pct(s.avo,n.avo),'喜欢亲密']])],
+    ['恋爱中的你',H.p(T.inLove)],
+    ['你最容易被打动的方式：'+E1.n,H.p(E1.p)+H.p('<b>'+E1.tip+'</b>')],
+    ['其次是：'+E2.n,H.p(E2.p)],
+    ['五种爱的表达方式',H.bars(ex.map(x=>[LOVE_EX[x].n,pct(s[x],n[x])]))],
+    ['你的恋爱优势',H.ul(T.s)],['你的恋爱雷区',H.ul(T.b)],
+    ['你需要什么样的伴侣',H.p(T.need)],
+    ['和其他类型怎么相处',H.pairs(T.with)],
+    ['给你的建议',H.ul(T.a)]
+   ]};
+}
+
+/* ===== 打工人格 ===== */
+const WORK_T={
+ yx:{n:'职场野心家',tag:'目标清晰，边界分明，带着大家往前冲',keys:['有野心','强势','会社交','执行力强','边界清晰'],quote:'这个项目我来负责。',
+  p:'你是职场上的天生赢家。你对工作投入，目标清晰，知道自己想要什么，也知道怎么争取。你会社交、有人缘，懂得为自己积累资源和人脉；同时你边界清晰，不会被别人随便甩锅、占便宜。你在乎升职加薪，也愿意为此付出努力。领导眼里你是重点培养对象，同事眼里你是又佩服又有点怕的那个人。',
+  day:'早上第一个到工位，先过一遍今天的目标清单；上午开会主动发言，抢下重点项目；中午和其他部门的人吃饭，顺便拉通资源；下午推进进度、盯人催活；晚上加个班，顺手把明天的方案写好。',
+  s:['目标感强，执行力一流','会争取资源，懂得经营人脉','边界清晰，不被别人随便拿捏','抗压能力强，能扛大项目'],
+  b:['太强势，容易让同事有压力','对自己和别人要求都太高','容易忽略工作之外的生活','有时太看重结果，忽略团队感受'],
+  boss:'能干、有冲劲、敢担当，是可以委以重任的人，但偶尔会担心你锋芒太露。',mate:'很厉害，跟着你能学到东西，但你的节奏太快，大家有时跟不上。',
+  fit:'有明确晋升通道、按绩效说话的公司，比如大型互联网公司、外企、快速成长的创业公司。岗位上适合销售管理、项目负责人、业务骨干。',
+  a:['别忘了照顾团队的感受，带人比自己冲更重要','给自己留出休息时间，身体是最大的本钱','学会适当示弱，寻求帮助','成绩要汇报，功劳要分享']},
+ sl:{n:'闷声实力派',tag:'不争不抢，用结果说话',keys:['专业','低调','高效','有原则','靠谱'],quote:'先把活干完再说。',
+  p:'你对工作非常投入，也有很强的专业能力，但你不爱社交，也不喜欢表现自己。你相信实力会说话，与其花时间搞关系，不如把事情做到最好。你边界清晰，不会被随便拉去做杂事，也不怕拒绝不合理的要求。你可能不是公司里最热闹的那一个，但一定是关键时刻大家第一个想到的人。',
+  day:'戴上耳机进入专注模式，上午解决最难的问题；午饭简单吃完继续干；下午被拉去开会，只在关键时刻说一句话；下班前把活干完，准时离开，不想被打扰。',
+  s:['专业能力强，是团队的技术担当','专注高效，干活不拖泥带水','有原则，不随便妥协','不搞办公室政治，让人放心'],
+  b:['太低调，成绩容易被别人抢走','不爱社交，升职时可能吃亏','有时太直接，说话不留情面','不善于向上汇报和推销自己'],
+  boss:'能力强、靠得住，但不太主动沟通，有时不知道你在想什么。',mate:'有问题找你准没错，但平时有点难接近。',
+  fit:'重视专业、氛围简单的公司，比如技术驱动型企业、研究机构、外企。岗位上适合技术专家、工程师、分析师。',
+  a:['定期向领导汇报你的成果','每周花一点时间和同事交流，积累人脉','学会推销自己的方案，好东西也要会说','考虑走专家路线，把专业做到极致']},
+ wn:{n:'团队万金油',tag:'热心肠，哪里需要哪里搬',keys:['热心','勤快','人缘好','好说话','团队精神'],quote:'没事，我来帮你。',
+  p:'你对工作投入，也对人热情。你愿意帮忙，人缘特别好，是团队里大家最喜欢的同事。哪里缺人你就补哪里，谁有困难你都伸把手。你做事积极，从不抱怨，是团队运转的润滑剂。但你也常常揽下太多本不属于你的活，把自己累得够呛，自己的核心工作反而被耽误了。',
+  day:'早上帮同事带了杯咖啡，上午帮隔壁部门找资料，中午组织大家点外卖，下午被三个人拉去帮忙，傍晚才开始干自己的活，晚上加班到最晚。',
+  s:['人缘极好，和谁都能合作','工作积极，执行力强','团队意识强，愿意付出','适应力强，什么活都能干'],
+  b:['不会拒绝，经常被塞活','精力分散，核心工作被耽误','容易被当成“好用的人”而不是“重要的人”','累了也不说，长期透支'],
+  boss:'积极好用，什么都能交给你，但有时说不清你的核心专长是什么。',mate:'超级好人，有事找你准没错，有时也习惯性地把活推给你。',
+  fit:'团队氛围好、重视协作的公司。岗位上适合项目协调、运营、行政管理、客户服务。',
+  a:['学会拒绝不属于你的活','每天先完成最重要的一件事，再去帮别人','打造一个只属于你的专业标签','帮忙可以，但要让领导看到你的付出']},
+ lh:{n:'默默老黄牛',tag:'活儿都是我的，功劳都是别人的',keys:['任劳任怨','踏实','可靠','不善表达','责任心强'],quote:'好的，收到。',
+  p:'你对工作认真负责，交代的事从不掉链子。但你不爱社交，也不太会拒绝别人，于是越来越多的活压到你身上。你默默干、默默扛，很少抱怨，也很少表现自己。团队离不开你，可升职加薪的时候，却常常轮不到你。你的付出值得被看见，你需要学会让别人看见。',
+  day:'早上默默开始干活，上午接了同事甩来的一个任务，中午随便吃两口，下午被领导临时加了个急活，晚上一个人在办公室加班，回家路上才想起自己今天的事还没做完。',
+  s:['责任心强，交代的事一定做好','踏实可靠，不出差错','能吃苦，抗压能力强','不抱怨，情绪稳定'],
+  b:['不会拒绝，承担太多','不善表达，成绩被忽视','不会争取，升职加薪容易吃亏','长期压抑，容易身心疲惫'],
+  boss:'好用、听话、靠得住，但可能没意识到你承担了多少。',mate:'很靠谱的人，但平时话不多，有点被忽略。',
+  fit:'制度规范、按绩效考核的公司，能让你的付出被量化。岗位上适合技术、财务、运营等专业岗位。',
+  a:['学会说“不”，你的时间也很宝贵','每周把完成的工作整理给领导看','主动争取一次你想要的机会','照顾好自己的身体和情绪']},
+ my:{n:'摸鱼社交家',tag:'工作是老板的，快乐是自己的',keys:['会社交','会摸鱼','心态好','边界清晰','效率高'],quote:'这个不归我管哦。',
+  p:'你对工作没那么上心，但你聪明、效率高，能用最少的时间完成该做的事，然后开开心心地摸鱼。你人缘好、会聊天，公司里什么消息你都知道。你边界清晰，不属于你的活一概不接，到点就下班。你活得很通透，但也要小心，太享受舒适区可能会错过成长的机会。',
+  day:'上午快速把今天的活干完，然后在各部门串门聊天；中午和饭搭子吃了一个半小时；下午刷刷手机、看看八卦，偶尔假装很忙；五点五十九分已经收拾好包，六点准时冲出公司。',
+  s:['效率高，会安排时间','人缘好，信息灵通','心态好，不内耗','边界清晰，不被压榨'],
+  b:['成长慢，技能容易停滞','被领导发现摸鱼会很尴尬','关键时刻可能掉链子','长期下来容易失去竞争力'],
+  boss:'人挺机灵，但好像没把心思全放在工作上。',mate:'跟你在一起很开心，公司的八卦都靠你。',
+  fit:'氛围轻松、考核宽松的公司。岗位上适合行政、公关、活动、商务等需要社交的工作。',
+  a:['把摸鱼的时间拿来学一项新技能','关键项目一定要认真对待','把人缘变成资源，为将来铺路','想清楚三年后你想成为什么样的人']},
+ qx:{n:'准点下班人',tag:'到点就走，工作只是工作',keys:['清醒','理性','边界感强','不内耗','低调'],quote:'下班了，明天再说。',
+  p:'你对工作看得很清楚：工作是用来换取生活的，不是生活的全部。你会把该做的事做好，但不会为工作牺牲太多。你不爱社交，也不参与办公室政治，到点就下班，回家过自己的生活。你很少内耗，是职场上最清醒的那一群人。但太清醒也有代价，关键时刻不够投入，可能会错过一些机会。',
+  day:'准时打卡，安静干活，午休一个人看看书，下午把任务完成，下班前十分钟收拾桌面，六点整关电脑走人，晚上的时间完全属于自己。',
+  s:['工作生活平衡，很少内耗','边界清晰，不被压榨','理性冷静，不参与是非','情绪稳定，状态持久'],
+  b:['投入度不高，晋升机会少','不爱社交，人脉积累慢','容易被认为不够上进','舒适区太舒服，可能错过成长'],
+  boss:'安分守己，按时完成任务，但很难成为核心骨干。',mate:'话不多，不惹事，挺好相处，但不太熟。',
+  fit:'制度规范、加班少的单位，比如国企、事业单位、外企。岗位上适合技术、财务、行政等按部就班的工作。',
+  a:['想清楚你在工作里真正想要什么','关键项目展示一下你的投入','用下班时间发展一项副业或爱好','清醒很好，但别让清醒变成躺平']},
+ qf:{n:'职场气氛组',tag:'工作一般般，但大家都离不开我',keys:['开朗','好相处','爱热闹','好说话','情绪价值高'],quote:'走走走，奶茶我请了！',
+  p:'你是公司里的开心果。你性格开朗，爱聊天、爱热闹，同事们都喜欢和你在一起。你对工作没那么拼，但也不会拒绝别人，经常被拉去帮各种忙。你提供的情绪价值很重要，但要小心别让“好相处”变成“没主见”，也别让热闹掩盖了你的专业成长。',
+  day:'上午在群里发了几个表情包活跃气氛，被同事拉去帮忙找文件；中午组织大家拼单；下午聊了一会儿八卦，又被领导叫去临时救场；下班后组织了一场聚餐。',
+  s:['情绪价值高，让团队更有凝聚力','人缘好，和谁都能聊','乐观开朗，抗压能力强','好说话，愿意帮忙'],
+  b:['不会拒绝，容易被塞杂活','专业能力提升慢','太在意别人的看法','容易被认为不够认真'],
+  boss:'能活跃气氛，但工作上还需要多一点投入。',mate:'公司没有你会很无聊，但正经的活不太会找你。',
+  fit:'团队氛围好、需要沟通协调的公司。岗位上适合活动策划、新媒体、销售、人力资源。',
+  a:['打造一项专业技能，让人缘有实力撑腰','学会拒绝无关紧要的帮忙','把社交优势用在工作上，比如对接客户','每天给自己留一段专注时间']},
+ jj:{n:'精神离职型',tag:'肉体上班，精神下班',keys:['疲惫','低投入','随大流','安静','想离开'],quote:'随便，都行。',
+  p:'你对现在的工作提不起劲，每天只完成最基本的任务，心里早就想走了。你不爱社交，也不太会拒绝别人，常常被动地接受安排。你的状态可能来自长期的疲惫，也可能是这份工作真的不适合你。你需要的不是更努力，而是停下来想清楚：问题出在工作，还是出在你现在的状态？',
+  day:'闹钟响了三次才起床，挤地铁时刷着招聘软件；上午对着电脑发呆，被安排的活慢慢做；中午一个人吃饭，下午盯着时间一分钟一分钟地熬；下班后瘫在沙发上，什么都不想干。',
+  s:['情绪稳定，不容易被激怒','不卷，不给别人压力','有底线，不会为工作搞坏身体','安静，不惹是非'],
+  b:['长期低落，消耗自己','被动接受安排，失去主动权','可能错过更好的机会','职业技能停滞不前'],
+  boss:'最近状态不太好，不知道你在想什么。',mate:'挺安静的，好像对什么都提不起兴趣。',
+  fit:'也许是时候换一个更适合你的环境了：一份能让你重新找到意义、或者压力更小的工作。',
+  a:['想清楚是累了，还是真的不适合','如果是累了，先给自己放个假','如果想走，有计划地准备下一份工作，别裸辞','长期提不起劲、心情低落时，找信任的人聊聊，必要时寻求专业帮助']}
+};
+const WORK_ITEMS=interleave([
+ [['工作做得好会让我很有成就感','tz',1],['我经常主动加班把事情做完','tz',1],['我会主动学习和工作相关的新技能','tz',1],['上班对我来说只是为了拿工资','tz',-1],['我很在意自己在公司的发展和晋升','tz',1],['周末收到工作消息，我也会马上处理','tz',1],['我每天都盼着下班','tz',-1],['我愿意为了工作牺牲一些个人时间','tz',1]],
+ [['不属于我的工作，我会直接拒绝','bj',1],['领导的不合理要求，我会提出来','bj',1],['下班后我基本不看工作消息','bj',1],['同事请我帮忙，我很难说不','bj',-1],['我会因为怕得罪人而委屈自己','bj',-1],['我能把工作和生活分得很清楚','bj',1],['别人把锅甩给我，我会据理力争','bj',1],['我经常揽下本不该我做的事','bj',-1]],
+ [['我在公司人缘很好，和谁都能聊','sj',1],['我喜欢参加公司的聚餐和活动','sj',1],['公司的八卦我总是第一个知道','sj',1],['开会时我经常主动发言','sj',1],['午饭我更喜欢一个人吃','sj',-1],['我在公司存在感不高','sj',-1],['我会主动认识其他部门的同事','sj',1],['能用文字沟通，我就不想当面说','sj',-1]]
+]);
+function workAnalyze(ans){
+  const {s,n}=tally(WORK_ITEMS,ans);
+  const t=s.tz>=0,b=s.bj>=0,j=s.sj>=0;
+  const k=t?(b?(j?'yx':'sl'):(j?'wn':'lh')):(b?(j?'my':'qx'):(j?'qf':'jj'));const T=WORK_T[k];
+  return {n:T.n,tag:T.tag,free:`你的职场口头禅：“${T.quote}”`,
+   sections:[
+    ['你的打工人格',H.p(T.p)],
+    ['你的关键词',H.chips(T.keys)],
+    ['你的职场三维',H.duo([['工作投入',pct(s.tz,n.tz),'能省则省'],['边界清晰',pct(s.bj,n.bj),'不会拒绝'],['社交活跃',pct(s.sj,n.sj),'低调安静']])],
+    ['你的一天',H.p(T.day)],
+    ['你的职场口头禅',H.p('<b>“'+T.quote+'”</b>')],
+    ['你的优势',H.ul(T.s)],['你的短板',H.ul(T.b)],
+    ['领导眼中的你',H.p(T.boss)],['同事眼中的你',H.p(T.mate)],
+    ['适合你的公司和岗位',H.p(T.fit)],
+    ['职场生存建议',H.ul(T.a)]
+   ]};
+}
+
+/* ===== 理财性格 ===== */
+const MONEY_T={
+ wj:{n:'稳健存钱型',tag:'钱放在银行，心才踏实',keys:['节俭','稳健','有安全感','自律','未雨绸缪'],
+  p:'你对钱的态度是“安全第一”。你花钱有节制，很少冲动消费，每个月都会存下一部分；你也不爱冒险，宁愿收益低一点，也要保证本金安全。你手里总有余钱，遇到急事不慌，这是很多人羡慕不来的底气。但太保守也有代价：钱放着不动，可能跑不过物价上涨，有时也会因为太节省而委屈了自己。',
+  habit:'发工资先存钱，剩下的才花；买东西会比价，能用就不换；投资只考虑存款和稳健的产品；账户里的数字慢慢变多，会让你很有成就感。',
+  s:['存钱能力强，手里有余粮','抗风险能力强，遇事不慌','消费理性，很少后悔','自律，能长期坚持'],
+  b:['钱可能跑不过物价上涨','太节省，影响生活品质','害怕风险，错过合理的增值机会','对钱过度焦虑，花一点就心疼'],
+  trap:'为了省钱牺牲健康和体验，或者因为太求稳，被“高收益、零风险”的说法打动。记住：真正零风险又高收益的东西几乎不存在。',
+  a:['先存够3到6个月的生活费作为应急金，这一点你可能已经做到了','在保证安全的前提下，了解一些低风险的增值方式','给自己设一个“快乐预算”，每月花一点在喜欢的事情上','提升收入比省钱更重要，可以投资自己的技能','遇到“保本高收益”的推销，一定要多打听、多核实']},
+ tz:{n:'理性投资型',tag:'省下来的每一分钱，都要让它生钱',keys:['理性','有远见','敢冒险','自律','爱研究'],
+  p:'你花钱节制，却敢于投资。你明白省钱只是第一步，让钱生钱才是关键。你愿意研究投资知识，也能承受一定的波动。你有长远的眼光，能为了未来的收益牺牲眼前的享受。这种“省钱加投资”的组合，往往能让财富慢慢积累。但也要小心，过度自信或者追求高收益，可能让你承担不该承担的风险。',
+  habit:'发工资先存一部分，再拿一部分去投资；平时生活简单，但会花时间研究投资知识；关注财经新闻，对市场变化很敏感；账户有涨有跌，你能比较淡定地看待。',
+  s:['有储蓄，也有增值意识','能承受一定的波动','愿意学习，持续提升理财能力','眼光长远，不图一时享受'],
+  b:['容易过度自信，高估自己的判断','可能频繁操作，反而亏钱','太关注收益，忽略了生活','遇到亏损时容易心态失衡'],
+  trap:'追涨杀跌、借钱投资，或者把大部分钱押在一个地方。记住：再好的机会，也不值得用全部身家去赌。',
+  a:['只用闲钱投资，不借钱、不加杠杆','分散投资，不把鸡蛋放在一个篮子里','提前想好最多能接受亏多少','少看短期涨跌，多看长期','别忘了享受生活，钱是为人服务的']},
+ xl:{n:'精致享乐型',tag:'钱就是用来让生活变好的',keys:['会生活','重体验','大方','求稳','活在当下'],
+  p:'你相信钱是用来让生活变得更好的。你愿意为美食、旅行、好看的衣服和舒服的体验花钱，懂得取悦自己，也对朋友大方。但对于投资理财，你兴趣不大，觉得太麻烦也太冒险，钱要么花掉，要么放在银行。你活得很开心，但储蓄偏少，一旦遇到急事，可能会有点被动。',
+  habit:'发工资后先犒劳自己，看到喜欢的东西很难忍住；朋友聚会经常抢着买单；月底账户经常见底；对投资理财没什么兴趣，觉得太麻烦。',
+  s:['会享受生活，幸福感高','对朋友大方，人缘好','不冒险，不会因为投资亏大钱','活在当下，不为钱焦虑'],
+  b:['储蓄少，抗风险能力弱','容易冲动消费，月底吃土','可能依赖信用卡和各种分期','对未来缺少规划'],
+  trap:'用信用卡、分期、网贷提前消费，还款压力越滚越大。记住：分期看起来每月不多，加起来可能是一大笔。',
+  a:['发工资先存10%到20%，剩下的再花','记一个月的账，看看钱都去哪了','尽量少用分期和网贷，还不起的不要买','先攒一笔应急金，再考虑享受','学一点基础理财知识，让钱慢慢增值']},
+ mx:{n:'敢花敢赚型',tag:'敢花才会赚，人生就要搏一搏',keys:['敢冒险','大方','有冲劲','乐观','野心大'],
+  p:'你是一个敢花也敢赚的人。你愿意为好的生活花钱，也愿意为更高的收益承担风险。你乐观、有冲劲，相信机会是留给敢冒险的人。你的人生可能大起大落，但从不乏味。只是“敢花”加“敢冒险”，会让你的财务状况像过山车，一不小心就可能陷入困境。',
+  habit:'赚了钱就犒劳自己，听到赚钱的机会会很心动；投资喜欢追热点，账户经常大涨大跌；钱来得快，去得也快；对未来很乐观，觉得总能赚回来。',
+  s:['敢于抓住机会','乐观，不怕失败','有冲劲，收入上限高','大方，不被钱束缚'],
+  b:['储蓄少，抗风险能力弱','容易冲动投资，追涨杀跌','容易被“快速致富”的骗局盯上','一次大亏可能影响很久'],
+  trap:'听信“稳赚不赔”的项目、跟风投资、借钱投资，甚至碰赌博类的“快钱”。记住：来得越快的钱，风险往往越大。',
+  a:['先存一笔谁都不能动的应急金','投资只用亏得起的钱，绝不借钱投资','远离任何承诺“稳赚”“翻倍”的项目','给消费和投资都设一个上限','把一部分收入放进长期、稳健的计划里']}
+};
+const MONEY_BEL={
+ hb:{n:'回避型金钱观',p:'你内心可能觉得谈钱有点俗，或者钱多了反而麻烦。这会让你在谈薪资、要账、理财时不好意思开口，吃了不少暗亏。',tip:'钱本身没有好坏，它只是工具。大方谈钱，是对自己劳动的尊重。'},
+ cb:{n:'崇拜型金钱观',p:'你倾向于认为“有钱就能解决大部分问题”。这让你赚钱的动力很强，但也容易永远觉得不够，忽略了钱买不到的东西。',tip:'钱能解决很多问题，但不是全部。给自己定一个“够了”的标准。'},
+ dw:{n:'面子型金钱观',p:'你比较在意别人怎么看你的经济状况，用的东西好会让你更有面子。这会推动你努力赚钱，但也可能让你为了面子超前消费。',tip:'把钱花在让自己真正舒服的地方，而不是别人的眼光里。'},
+ jt:{n:'警惕型金钱观',p:'你对钱非常谨慎，时刻关注账户余额，花钱时常有负罪感。这让你很少乱花钱，但也可能让你活得太紧绷。',tip:'适度花钱是对自己的照顾，不必为合理的消费内疚。'}
+};
+const MONEY_ITEMS=interleave([
+ [['看到喜欢的东西，我通常会直接买','xf',1],['我愿意为好的体验花大钱，比如旅行、美食','xf',1],['发工资后没几天，钱就花得差不多了','xf',1],['我每个月都会固定存一部分钱','xf',-1],['买东西前我会反复比价','xf',-1],['心情不好时，购物能让我开心起来','xf',1],['我很少冲动消费','xf',-1],['我觉得赚钱就是为了花','xf',1]],
+ [['为了更高的收益，我愿意承担亏钱的风险','fx',1],['我宁愿收益低一点，也要保证本金安全','fx',-1],['听说有赚钱的机会，我会很想试一试','fx',1],['我对股票、基金这类投资很感兴趣','fx',1],['把钱放在银行最让我安心','fx',-1],['我能接受投资短期内亏损','fx',1],['没把握的事，我一分钱都不会投','fx',-1],['我觉得想发财就得敢冒险','fx',1]],
+ [['我不太好意思主动谈钱，比如谈薪资、要账','hb'],['只要钱更多，我的烦恼就会少一大半','cb'],['我在意别人觉得我有没有钱','dw'],['我会时刻关注自己的账户余额','jt'],['钱多了反而会带来麻烦','hb'],['我觉得钱能解决大部分问题','cb'],['用的东西好，会让我更有面子','dw'],['花钱的时候，我经常有负罪感','jt']]
+]);
+function moneyAnalyze(ans){
+  const {s,n}=tally(MONEY_ITEMS,ans);
+  const sp=s.xf>0,rk=s.fx>0;const k=sp?(rk?'mx':'xl'):(rk?'tz':'wj');const T=MONEY_T[k];
+  const bel=['hb','cb','dw','jt'].sort((a,b)=>s[b]-s[a]);const B=MONEY_BEL[bel[0]];
+  return {n:T.n,tag:T.tag,free:`你的金钱信念偏向「${B.n}」`,
+   sections:[
+    ['你的理财画像',H.p(T.p)],
+    ['你的关键词',H.chips(T.keys)],
+    ['你的理财维度',H.duo([['享受当下',pct(s.xf,n.xf),'节制储蓄'],['敢于冒险',pct(s.fx,n.fx),'稳字当头']])],
+    ['你的消费习惯',H.p(T.habit)],
+    ['你的金钱信念：'+B.n,H.p(B.p)+H.p('<b>'+B.tip+'</b>')],
+    ['四种金钱信念',H.bars(bel.map(x=>[MONEY_BEL[x].n.replace('金钱观',''),pct(s[x],n[x])]))],
+    ['你的优势',H.ul(T.s)],['需要注意',H.ul(T.b)],
+    ['你最容易踩的坑',H.p(T.trap)],
+    ['给你的理财建议',H.ul(T.a)],
+    ['说明',H.p('以上内容是根据你的答题给出的通用参考，不构成任何具体的投资建议。')]
+   ]};
+}
+
+const PAID_TESTS=[
+ {id:'job',name:'职业倾向测试',sub:'六种职业兴趣，找到最适合你的工作',glyph:'职',c:'#2f6fe4',price:0.99,items:JOB_ITEMS,analyze:jobAnalyze,teaser:['你的主类型和辅助类型','六种职业兴趣分布','最适合你的11个职业','职业发展路径和成长建议']},
+ {id:'love',name:'恋爱类型测试',sub:'你的恋爱模式和最容易被打动的方式',glyph:'恋',c:'#e2507f',price:0.99,items:LOVE_ITEMS,analyze:loveAnalyze,teaser:['你的恋爱维度分析','你最容易被打动的方式','你需要什么样的伴侣','和其他类型怎么相处']},
+ {id:'work',name:'打工人格测试',sub:'8种打工人，看看你是哪一种',glyph:'工',c:'#1f9a6a',price:0.99,items:WORK_ITEMS,analyze:workAnalyze,teaser:['你的职场三维分析','领导和同事眼中的你','适合你的公司和岗位','职场生存建议']},
+ {id:'money',name:'理财性格测试',sub:'你的消费习惯和金钱信念',glyph:'财',c:'#7a52d8',price:0.99,items:MONEY_ITEMS,analyze:moneyAnalyze,teaser:['你的理财维度分析','你的金钱信念','你最容易踩的坑','给你的理财建议']}
+];
+
+/* ---------- 应用逻辑 ---------- */
+const XY_TEST={id:'xiyou',name:'你是西游记里的谁',sub:'24个西游角色，附专属角色头像',c:'#d9782b',price:0};
+const ALL=[XY_TEST,...PAID_TESTS];
+const BUNDLE=2.99,PASS_DAYS=3,ADS_NEEDED=5;
+const XY_BY={};XY.forEach(c=>XY_BY[c.k]=c);
+const byName=s=>{const nm=s.split('。')[0];return XY.find(c=>c.n===nm)};
+const av=(k,cls='av')=>`<span class="${cls}">${LP.draw(k,XY_BY[k].camp)}</span>`;
+
+const store={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+let unlocked=new Set(store.get('xcj_paid',[])),adCount=store.get('xcj_ads',{}),passUntil=store.get('xcj_pass',0),seen=new Set(store.get('xcj_seen',[]));
+const passActive=()=>Date.now()<passUntil;
+const isOpen=t=>t.price===0||unlocked.has(t.id)||passActive();
+const fmtTime=ms=>{const d=new Date(ms);const p=n=>String(n).padStart(2,'0');return `${d.getMonth()+1}月${d.getDate()}日 ${p(d.getHours())}:${p(d.getMinutes())}`};
+const priceTag=t=>t.price===0?'<span class="tag adt">看广告免费</span>':isOpen(t)?'<span class="tag open">已解锁</span>':`<span class="tag">${t.price}元</span>`;
+const glyphOf=t=>t.id==='xiyou'?`<span class="glyph">${LP.draw('wk','qj')}</span>`:`<span class="glyph">${t.glyph}</span>`;
+const qCount=t=>t.id==='xiyou'?XY_QS.length:t.items.length;
+
+const app=document.getElementById('app'),ov=document.getElementById('ov');
+let Q=null,last=null;
+const $=id=>document.getElementById(id);
+const on=(id,f)=>{const e=$(id);if(e)e.onclick=f};
+
+function home(){
+  Q=null;last=null;app.style.removeProperty('--c');
+  app.innerHTML=`
+  <div class="top"><h1>小测<span>局</span></h1><p>5个小测试，测完更懂自己</p></div>
+  ${passActive()?`<div class="bundle done"><div><b>全部解锁中</b><small>有效期至 ${fmtTime(passUntil)}，所有报告随便看</small></div></div>`:
+  `<div class="bundle"><div><b>全部解锁 ${BUNDLE}元</b><small>${PASS_DAYS}天内4个付费测试的完整报告随便看</small></div><button type="button" id="bAll">去解锁</button></div>`}
+  <div class="cards">${ALL.map(t=>`
+    <button class="card" type="button" data-id="${t.id}" style="--c:${t.c}">${glyphOf(t)}
+      <span class="txt"><h3>${t.name}</h3><p>${t.sub} · ${qCount(t)}题</p></span>${priceTag(t)}
+    </button>`).join('')}</div>
+  <p class="foot">做题和查看类型都免费。付费报告可以付款解锁，也可以看${ADS_NEEDED}个广告免费解锁。<br>测试结果仅供娱乐参考。</p>`;
+  app.querySelectorAll('.card').forEach(b=>b.onclick=()=>start(ALL.find(t=>t.id===b.dataset.id)));
+  on('bAll',()=>pay(null));
+  scrollTo(0,0);
+}
+function start(t){Q={t,i:0,ans:[],g:null};t.id==='xiyou'?gender():quiz()}
+
+/* ---------- 西游 ---------- */
+function gender(){
+  app.style.setProperty('--c',XY_TEST.c);
+  const nm=XY.filter(c=>c.g==='m').length,nf=XY.filter(c=>c.g==='f').length;
+  app.innerHTML=`
+  <div class="qbar"><button class="back" type="button" id="back">‹ 返回</button></div>
+  <div class="qtitle">${XY_TEST.name}</div>
+  <h2 class="q">先选一下你的性别</h2>
+  <p style="margin:0;color:var(--muted)">男生和女生有各自的专属角色</p>
+  <div class="gender">
+    <button class="gbtn" type="button" data-g="m">${av('ts')}男生<small>${nm}个角色等你解锁</small></button>
+    <button class="gbtn" type="button" data-g="f">${av('nr')}女生<small>${nf}个角色等你解锁</small></button>
+  </div>`;
+  on('back',home);
+  app.querySelectorAll('.gbtn').forEach(b=>b.onclick=()=>{Q.g=b.dataset.g;quiz()});
+}
+function xyCompute(g,ans){
+  const sum=[0,0,0,0];ans.forEach(v=>v.forEach((x,j)=>sum[j]+=x));
+  const u=sum.map(x=>Math.max(-1,Math.min(1,x/XY_DIV)));
+  const ranked=XY.filter(c=>c.g===g).map(c=>{const d=Math.sqrt(c.v.reduce((s,x,j)=>s+(x-u[j])**2,0));return {k:c.k,d,s:d+(XY_BIAS[c.k]||0),m:Math.max(62,Math.min(98,Math.round(99-d*11)))}}).sort((a,b)=>a.s-b.s);
+  const dims=sum.map(x=>Math.round(Math.max(3,Math.min(97,50+50*x/XY_DIV/1.6))));
+  return {ranked,dims};
+}
+function xyGate(){
+  const r=xyCompute(Q.g,Q.ans);last={kind:'xy',g:Q.g,...r};
+  app.innerHTML=`
+  <div class="gate">${av(r.ranked[0].k)}
+    <h2>你的西游角色已生成</h2>
+    <p>看一段广告，揭晓你是谁，并查看完整的角色报告</p>
+    <button class="adbtn" type="button" id="watch">▶ 看广告查看结果</button>
+    <button class="back" type="button" id="toHome">返回测试合集</button>
+  </div>`;
+  on('watch',()=>watchAd('看完即可查看你的西游角色',()=>xyResult(last)));
+  on('toHome',home);scrollTo(0,0);
+}
+function xyResult(r){
+  const top=r.ranked[0],C=XY_BY[top.k],camp=LP.CAMP[C.camp];
+  seen.add(C.k);store.set('xcj_seen',[...seen]);
+  const M=byName(C.mate),R=byName(C.rival);
+  const blk=(l,h)=>`<div class="blk"><div class="lbl">${l}</div>${h}</div>`;
+  app.style.setProperty('--c',XY_TEST.c);
+  app.innerHTML=`
+  <div class="hero withav" style="--c:${camp.c}">${av(C.k)}<small>你是西游记里的</small><h2>${C.n}</h2>
+    <div class="pills"><span class="pill">阵营：${camp.n}</span><span class="pill">契合度 ${top.m}%</span></div><p style="margin-top:6px">${C.tag}</p></div>
+  <div class="sec"><div class="body">
+    <h3>${C.n} · 完整角色报告</h3>
+    ${blk('你的性格画像',H.p(C.p))}
+    ${blk('原著里的'+C.n,H.p(C.story))}
+    ${blk('你的四个性格维度',H.duo(XY_DIMS.map((d,i)=>[d[0],r.dims[i],d[1]])))}
+    ${blk('性格优势',H.ul(C.s))}
+    ${blk('性格短板',H.ul(C.b))}
+    ${blk('工作中的你',H.p(C.work))}
+    ${blk('感情中的你',H.p(C.love))}
+    ${blk('朋友眼中的你',H.p(C.friend))}
+    ${blk('给你的建议',H.ul(C.a))}
+    ${blk('取经路上的搭档和冤家',`<div class="duo-chars">${M?`<div class="mini">${av(M.k)}<div><b>最佳搭档</b>${C.mate}</div></div>`:''}${R?`<div class="mini">${av(R.k)}<div><b>命中冤家</b>${C.rival}</div></div>`:''}</div>`)}
+    ${blk('你身上还有这些角色的影子',`<div class="shadows">${r.ranked.slice(1,4).map(o=>`<div>${av(o.k)}${XY_BY[o.k].n}<span style="color:var(--muted);font-size:12px">${o.m}%</span></div>`).join('')}</div>`)}
+    ${blk(`角色图鉴（已解锁 ${XY.filter(c=>c.g===r.g&&seen.has(c.k)).length}/${XY.filter(c=>c.g===r.g).length}）`,`<div class="dex">${XY.filter(c=>c.g===r.g).map(c=>`<div class="${c.k===C.k?'me':seen.has(c.k)?'':'off'}">${av(c.k)}${seen.has(c.k)?c.n:'？？？'}</div>`).join('')}</div><p style="font-size:12px;color:var(--muted)">换个心情再测一次，或者让朋友来测，解锁更多角色。</p>`)}
+  </div></div>
+  <div class="share" style="--c:${camp.c}">${av(C.k)}<small>你是西游记里的谁 · ${camp.n}</small><h3>我是${C.n}</h3><p style="margin:0">${C.tag}</p><small>截图发朋友圈，看看朋友是哪个角色 · 小测局</small></div>
+  <div class="row"><button class="pri" type="button" id="again">再测一次</button><button type="button" id="toHome">测试合集</button></div>
+  ${moreCards(XY_TEST)}`;
+  on('again',()=>start(XY_TEST));on('toHome',home);bindMore();scrollTo(0,0);
+}
+
+/* ---------- 答题 ---------- */
+function quiz(){
+  const {t,i}=Q;const xy=t.id==='xiyou';const total=qCount(t);
+  app.style.setProperty('--c',t.c);
+  let body;
+  if(xy){const [q,opts]=XY_QS[i];body=`<h2 class="q">${q}</h2><div class="opts">${opts.map((o,k)=>`<button class="opt" type="button" data-k="${k}">${o[0]}</button>`).join('')}</div>`}
+  else{const it=t.items[i];const sz=[26,22,18,22,26];body=`<h2 class="q">${it[0]}</h2><div class="opts likert">${LIKERT.map((o,k)=>`<button class="opt" type="button" data-k="${k}"><i style="width:${sz[k]}px;height:${sz[k]}px"></i>${o[0]}</button>`).join('')}</div>`}
+  app.innerHTML=`
+  <div class="qbar"><button class="back" type="button" id="back">‹ ${i?'上一题':'返回'}</button><div class="prog"><i style="width:${i/total*100}%"></i></div><span class="count">${i+1} / ${total}</span></div>
+  <div class="qtitle">${t.name}${xy?'':' · 凭第一感觉选'}</div>${body}
+  ${i===0?(xy?'<p class="priceNote">做完题看一段广告，即可查看你的角色和完整报告</p>':isOpen(t)?'':`<p class="priceNote">查看你的类型免费；完整报告${t.price}元，或看${ADS_NEEDED}个广告解锁</p>`):''}`;
+  on('back',()=>{if(Q.i===0)return xy?gender():home();Q.i--;Q.ans.pop();quiz()});
+  app.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{
+    const k=+b.dataset.k;Q.ans.push(xy?XY_QS[i][1][k][1]:LIKERT[k][1]);
+    if(Q.i<total-1){Q.i++;quiz()}else if(xy)xyGate();else result(t,Q.ans);
+  });
+}
+
+/* ---------- 付费测试结果 ---------- */
+function result(t,ans){
+  last={kind:'paid',t,ans};
+  const R=t.analyze(ans),open=isOpen(t),ads=adCount[t.id]||0;
+  app.style.setProperty('--c',t.c);
+  app.innerHTML=`
+  <div class="hero"><small>${t.name} · 你的类型</small><h2>${R.n}</h2><p>${R.tag}</p><div class="free">${R.free}</div></div>
+  <div class="sec ${open?'':'locked'}">
+    <div class="body"><h3>${R.n} · 完整报告</h3>${R.sections.map(s=>`<div class="blk"><div class="lbl">${s[0]}</div>${s[1]}</div>`).join('')}</div>
+    ${open?'':`<div class="lock"><div><b>解锁完整报告</b>
+      <ul>${t.teaser.map(x=>`<li>${x}</li>`).join('')}<li>共${R.sections.length}个板块的深度分析</li></ul>
+      <button class="cta" type="button" id="pOne">${t.price}元 解锁这份报告</button>
+      <button class="adbtn" type="button" id="pAd">▶ 看${ADS_NEEDED}个广告免费解锁（${ads}/${ADS_NEEDED}）</button>
+      <button class="ghost" type="button" id="pAll">${BUNDLE}元 ${PASS_DAYS}天内全部解锁</button></div></div>`}
+  </div>
+  <div class="share"><span class="glyph">${t.glyph}</span><small>${t.name}</small><h3>我是${R.n}</h3><p style="margin:0">${R.tag}</p><small>截图发给朋友，看看他是哪一型 · 小测局</small></div>
+  <div class="row"><button class="pri" type="button" id="again">再测一次</button><button type="button" id="toHome">测试合集</button></div>
+  ${moreCards(t)}`;
+  on('pOne',()=>pay(t,'one'));on('pAd',()=>pay(t,'ad'));on('pAll',()=>pay(t,'all'));
+  on('again',()=>start(t));on('toHome',home);bindMore();scrollTo(0,0);
+}
+function moreCards(t){
+  const others=ALL.filter(x=>x.id!==t.id).slice(0,2);
+  return `<div class="more"><div class="lbl" style="color:var(--muted)">再测一个</div>${others.map(x=>`
+    <button class="card" type="button" data-id="${x.id}" style="--c:${x.c}">${glyphOf(x)}<span class="txt"><h3>${x.name}</h3><p>${x.sub}</p></span>${priceTag(x)}</button>`).join('')}</div>`;
+}
+function bindMore(){app.querySelectorAll('.more .card').forEach(b=>b.onclick=()=>start(ALL.find(x=>x.id===b.dataset.id)))}
+function refresh(){if(!last)return home();last.kind==='xy'?xyResult(last):result(last.t,last.ans)}
+
+/* ---------- 广告与付款（演示） ---------- */
+function watchAd(note,done){
+  let n=3;
+  ov.innerHTML=`<div class="sheet" role="dialog" aria-label="广告"><div class="adplay"><span class="lbl" style="color:var(--ad)">激励视频广告</span><span class="num" id="cd">3</span><p>${note}</p><p class="demo">演示：正式版这里播放15到30秒的广告</p></div></div>`;
+  ov.hidden=false;
+  const tm=setInterval(()=>{n--;const e=$('cd');if(e)e.textContent=n;if(n<=0){clearInterval(tm);ov.hidden=true;done()}},1000);
+}
+function pay(t,sel){
+  sel=sel||(t?'one':'all');
+  const draw=()=>{
+    const ads=t?(adCount[t.id]||0):0;
+    ov.innerHTML=`<div class="sheet" role="dialog" aria-label="解锁报告">
+      <h3>选择解锁方式</h3>
+      ${t?`<button class="plan ${sel==='one'?'sel':''}" type="button" data-s="one"><span>解锁这份报告<small>${t.name}，永久有效</small></span><b>${t.price}元</b></button>
+      <button class="plan ${sel==='ad'?'sel':''}" type="button" data-s="ad"><span>看广告免费解锁<small>看满${ADS_NEEDED}个即可，进度会保存</small></span><b>${ads}/${ADS_NEEDED}</b></button>`:''}
+      <button class="plan ${sel==='all'?'sel':''}" type="button" data-s="all"><span>全部解锁（最划算）<small>${PASS_DAYS}天内4个付费测试的完整报告随便看</small></span><b>${BUNDLE}元</b></button>
+      ${sel==='ad'?`<div class="dots">${Array.from({length:ADS_NEEDED},(_,i)=>`<i class="${i<ads?'on':''}"></i>`).join('')}</div><button class="paybtn ad" type="button" id="go">▶ 看第${ads+1}个广告</button>`:
+        `<button class="paybtn" type="button" id="go">微信支付 ${sel==='one'?t.price:BUNDLE}元</button>`}
+      <p class="demo">演示版：广告和付款都是模拟的，正式版接入广告平台和微信支付</p>
+      <button class="back" type="button" id="cancel" style="align-self:center">取消</button>
+    </div>`;
+    ov.querySelectorAll('.plan').forEach(b=>b.onclick=()=>{sel=b.dataset.s;draw()});
+    on('cancel',()=>{ov.hidden=true;refresh()});
+    on('go',e=>{
+      if(sel==='ad'){
+        watchAd(`第${ads+1}个，共${ADS_NEEDED}个`,()=>{
+          adCount[t.id]=(adCount[t.id]||0)+1;store.set('xcj_ads',adCount);
+          if(adCount[t.id]>=ADS_NEEDED){unlocked.add(t.id);store.set('xcj_paid',[...unlocked]);refresh()}
+          else{ov.hidden=false;draw()}
+        });return;
+      }
+      const b=e.currentTarget;b.disabled=true;b.textContent='支付中…';
+      setTimeout(()=>{
+        if(sel==='one'){unlocked.add(t.id);store.set('xcj_paid',[...unlocked])}
+        else{passUntil=Date.now()+PASS_DAYS*864e5;store.set('xcj_pass',passUntil)}
+        b.textContent='支付成功';setTimeout(()=>{ov.hidden=true;refresh()},500);
+      },1100);
+    });
+  };
+  draw();ov.hidden=false;
+}
+ov.onclick=e=>{if(e.target===ov&&ov.querySelector('.plan'))ov.hidden=true};
+home();
+
+</script>
+
+</body>
+</html>
